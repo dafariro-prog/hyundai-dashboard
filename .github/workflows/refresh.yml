@@ -1,0 +1,49 @@
+name: Refresco diario del tracking (Hyundai)
+
+on:
+  schedule:
+    # 11:00 UTC = 06:00 Panamá. Corre todos los días.
+    - cron: "0 11 * * *"
+  workflow_dispatch: {}   # permite correrlo manualmente desde la pestaña Actions
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm ci || npm install
+
+      - name: Escribir credenciales de la Service Account
+        run: echo "$GCP_SA_KEY" > "$RUNNER_TEMP/sa.json"
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Refrescar data desde BigQuery
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: node refresh.js
+
+      - name: Commit si hubo cambios
+        run: |
+          git config user.name  "hyundai-bot"
+          git config user.email "actions@github.com"
+          git add data/tracking.json
+          if git diff --staged --quiet; then
+            echo "Sin cambios en la data."
+          else
+            git commit -m "chore: refresco data $(date -u +%Y-%m-%d)"
+            for i in 1 2 3; do
+              git pull --rebase --autostash -X ours origin main && git push && break || { echo "reintento $i"; sleep 4; }
+            done
+          fi

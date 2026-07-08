@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracking de Campañas · Hyundai</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f5; --card:#ffffff; --line:#e4e4e4; --txt:#151515; --muted:#6e6e6e;
+    --accent:#002c5f;
+    --awareness:#3A75EB; --trafico:#1DCB78; --views:#F6993E; --conversion:#EB3B38; --interaccion:#BD8AF2;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:24px}
+
+  header{background:#002c5f;border-radius:18px;padding:20px 26px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+  header h1{font-size:22px;font-weight:600;letter-spacing:-.3px}
+  header .sub{font-size:12.5px;opacity:.9;margin-top:3px}
+  .logos{display:flex;gap:10px;align-items:center}
+  .brand-logo{background:#fff;border-radius:18px;padding:11px 20px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);min-height:58px}
+  .brand-logo img{height:36px;max-width:170px;object-fit:contain;display:block}
+  .brand-logo .brand-name{font-weight:600;font-size:19px;color:#1a1f36;letter-spacing:-.3px}
+  .brand-logo .brand-flag{font-size:30px;line-height:1}
+
+  .filters{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .filters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px 16px}
+  .filters-chips{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+  .filters select{width:100%}
+  .fgroup{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .ms{position:relative}
+  .ms-btn{width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--txt);display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .ms-btn::after{content:'▾';color:var(--muted);font-size:11px}
+  .ms-panel{display:none;position:absolute;z-index:40;top:calc(100% + 4px);left:0;right:0;min-width:230px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:8px;max-height:300px;flex-direction:column}
+  .ms-panel.open{display:flex}
+  .ms-search{margin-bottom:6px}
+  .ms-opts{overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+  .ms-opt{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 6px;border-radius:6px;cursor:pointer}
+  .ms-opt:hover{background:#f5f5f5}
+  .ms-opt input{width:auto;flex:none}
+  .ms-empty{font-size:12px;color:var(--muted);padding:8px}
+  .dt-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .camp-search{border:1.5px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;font-family:inherit;width:220px;outline:none;font-weight:400}
+  .camp-search:focus{border-color:var(--accent)}
+  .csv-btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .csv-btn:hover{background:#001b3a}
+  .fgroup label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+  select,input{background:#fff;border:1.5px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none;transition:.15s}
+  select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,44,95,.14)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{background:#fff;border:1.5px solid var(--line);color:var(--muted);padding:7px 13px;border-radius:22px;cursor:pointer;font-size:12px;font-weight:500;user-select:none;transition:.15s}
+  .chip:hover{border-color:#c7ccdb}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(0,44,95,.3)}
+  .chip[data-tipo].on{box-shadow:none}
+
+  .acct-head{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .acct-head .a-left{display:flex;align-items:center;gap:14px}
+  .ag-logo{display:flex;align-items:center;justify-content:center;padding:6px 11px;background:#f5f5f5;border-radius:10px}
+  .ag-logo img{height:22px;display:block;max-width:120px;object-fit:contain}
+  .ag-flag{font-size:28px;line-height:1}
+  .acct-head .a-name{font-size:20px;font-weight:600;letter-spacing:-.3px}
+  .acct-head .a-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .acct-head .a-badge{font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:22px;display:flex;align-items:center;gap:7px}
+  .acct-head .a-badge .bdot{width:8px;height:8px;border-radius:50%;background:currentColor}
+
+  .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
+  .hcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:var(--shadow);position:relative}
+  .hcard .h-label{font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600}
+  .hcard .h-val{font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1}
+  .hcard .h-val small{font-size:15px;font-weight:600;color:var(--muted);letter-spacing:0}
+  .hcard .h-sub{font-size:11px;color:var(--muted);margin-top:9px}
+  .hcard .h-dot{position:absolute;top:20px;right:20px;width:9px;height:9px;border-radius:50%}
+
+  .est{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .est.activa{background:#dcfce7;color:#15803d}
+  .est.fin{background:#f1f3f7;color:#7b8499}
+  .pais-badge{font-size:10.5px;font-weight:600;background:#f0f0f0;color:#3D3D3D;padding:2px 8px;border-radius:6px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:18px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;position:relative;box-shadow:var(--shadow);overflow:hidden}
+  .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);opacity:.0}
+  .kpi.hot::before{opacity:1}
+  .kpi .k-ico{font-size:18px;margin-bottom:8px;display:block}
+  .kpi .k-label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .kpi .k-val{font-size:23px;font-weight:600;letter-spacing:-.5px}
+  .kpi .k-sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .kpi.hot{border-color:var(--accent)}
+  .kpi.hot .k-tag{position:absolute;top:10px;right:10px;font-size:8.5px;background:var(--accent);color:#fff;padding:3px 7px;border-radius:6px;font-weight:600;letter-spacing:.4px}
+
+  .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+  .card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+  .card h3 .mini{display:flex;gap:5px}
+  .mini .chip{padding:5px 10px;font-size:11px}
+  canvas{max-height:300px}
+
+  .sec-title{font-size:15px;font-weight:600;margin:6px 4px 14px;display:flex;align-items:center;gap:8px}
+  .sec-title small{font-weight:500;color:var(--muted);font-size:12px}
+
+  .reco-section{margin-bottom:20px}
+  .reco-section>summary{cursor:pointer;list-style:none;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;padding:4px 4px}
+  .reco-section>summary::-webkit-details-marker{display:none}
+  .reco-section>summary::after{content:'▸ ver';margin-left:auto;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap}
+  .reco-section[open]>summary::after{content:'▾ ocultar'}
+  .reco-section>summary small{font-weight:500;color:var(--muted);font-size:12px}
+  .reco-bar{display:flex;justify-content:flex-end;margin:10px 0 0}
+  .reco-toggle{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--txt);font-family:inherit}
+  .reco-toggle:hover{border-color:#c7ccdb}
+  .reco-list{display:flex;flex-direction:column;gap:10px;margin:10px 0 0}
+  .reco{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .reco.alta{border-left-color:#EB3B38}.reco.media{border-left-color:#F6993E}.reco.baja{border-left-color:#AAAAAA}
+  .reco summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 18px}
+  .reco summary::-webkit-details-marker{display:none}
+  .reco summary::after{content:'▸';color:var(--muted);transition:transform .2s;font-size:12px}
+  .reco[open] summary::after{transform:rotate(90deg)}
+  .reco .r-prio{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:6px;color:#fff;white-space:nowrap}
+  .reco .r-title{font-weight:600;font-size:13.5px;line-height:1.35;flex:1}
+  .reco summary .r-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .reco .r-body{padding:12px 18px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:9px;font-size:12.5px;line-height:1.5}
+  .reco .r-body b{font-weight:600;color:var(--txt)}
+  .reco .r-diag{color:var(--txt)}
+  .reco .r-imp b:last-child,.reco .r-imp{color:var(--muted)}
+  @media(max-width:680px){.reco summary .r-meta{display:none}}
+  .obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:20px}
+  .obj{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:0;box-shadow:var(--shadow);overflow:hidden}
+  .obj .o-head{padding:14px 16px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}
+  .obj .o-head .o-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .obj .o-head .o-kpi{text-align:right}
+  .obj .o-head .o-kpi b{font-size:21px;font-weight:600;display:block;letter-spacing:-.5px}
+  .obj .o-head .o-kpi span{font-size:10px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+  .obj .o-body{padding:13px 16px}
+  .obj .o-stats{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding-bottom:11px;margin-bottom:11px;border-bottom:1px dashed var(--line)}
+  .obj .o-stats b{color:var(--txt);font-weight:600;display:block;font-size:14px;margin-top:1px}
+  .obj .o-plat-title{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+  .o-plat{margin-bottom:9px}
+  .o-plat .p-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .o-plat .p-top .p-name{display:flex;align-items:center;gap:6px;font-weight:600}
+  .o-plat .p-top .p-val{color:var(--muted)}
+  .o-plat .p-bar{height:6px;border-radius:4px;background:#eef1f7;overflow:hidden}
+  .o-plat .p-bar i{display:block;height:100%;border-radius:4px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 11px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none}
+  tbody tr:hover{background:#f8f9fd}
+  td b{font-weight:600}
+  .o-pill{font-size:10px;font-weight:600;color:#fff;padding:2px 9px;border-radius:6px;white-space:nowrap}
+  td.kpi-hot{font-weight:600}
+  .camp{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .note{background:#fff7e6;border:1px solid #ffe2a8;color:#8a6312;border-radius:11px;padding:11px 15px;font-size:12.5px;margin-bottom:18px}
+  .note code{background:#ffedc4;padding:1px 5px;border-radius:4px}
+  .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  .topbar{background:#fff;border-radius:20px;padding:13px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;box-shadow:var(--shadow)}
+  .tb-left{display:flex;align-items:center;gap:14px}
+  .tb-hyundai{font-size:22px;font-weight:600;letter-spacing:4px;color:#002c5f}
+  .tb-sep{width:1px;height:22px;background:var(--line)}
+  .tb-title{font-size:15px;font-weight:600;color:var(--txt)}
+  .tb-by{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:500}
+  .tb-bylogo{height:15px;display:block;opacity:.85}
+  .tb-right{display:flex;align-items:center;gap:9px;font-size:12.5px;flex-wrap:wrap}
+  .pill-user{background:#f3f3f3;border-radius:22px;padding:8px 15px;font-weight:500;color:#3D3D3D}
+  .pill-dark{background:var(--accent);color:#fff;border-radius:22px;padding:8px 15px;font-weight:600;text-decoration:none}
+  .pill-out{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 15px;font-weight:600;color:var(--txt);cursor:pointer}
+  .meta-line{font-size:11.5px;color:var(--muted);margin:0 6px 16px}
+  .userbar{display:flex;justify-content:flex-end;align-items:center;gap:9px;font-size:12.5px;margin-bottom:10px}
+  .userbar .uchip{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-weight:600;color:var(--txt)}
+  .userbar a,.userbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--txt)}
+  .userbar a.admin{background:var(--accent);color:#fff;border-color:var(--accent)}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-hyundai">HYUNDAI</span>
+      <span class="tb-sep"></span>
+      <span class="tb-title">Tracking de Campañas</span>
+      <span class="tb-by">by <img class="tb-bylogo" src="assets/garnier_brand_black.png" alt="Grupo Garnier"></span>
+    </div>
+    <div class="tb-right" id="userBox"></div>
+  </div>
+  <div class="meta-line" id="meta">Cargando…</div>
+
+  <div class="filters">
+    <div class="filters-grid">
+      <div class="fgroup" style="display:none"><label>Agencia</label><select id="fAgencia"></select></div>
+      <div class="fgroup"><label>País</label><select id="fPais"></select></div>
+      <div class="fgroup" style="display:none"><label>Cuenta</label><select id="fCuenta"></select></div>
+      <div class="fgroup" id="gAccount" style="display:none"><label>Account name</label>
+        <div class="ms" id="msAccount">
+          <button type="button" class="ms-btn" id="msAccountBtn">Todos</button>
+          <div class="ms-panel" id="msAccountPanel">
+            <input type="text" class="ms-search" id="msAccountSearch" placeholder="Buscar…">
+            <div class="ms-opts" id="msAccountOpts"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fgroup" id="gPlanner" style="display:none"><label>Planner</label><select id="fPlanner"></select></div>
+      <div class="fgroup" id="gImplementador" style="display:none"><label>Implementador</label><select id="fImplementador"></select></div>
+      <div class="fgroup"><label>Estado</label><select id="fEstado">
+        <option value="">Todos</option><option value="act">Activas</option><option value="fin">Finalizadas</option>
+      </select></div>
+      <div class="fgroup"><label>Año</label><select id="fAnio"></select></div>
+      <div class="fgroup"><label>Mes</label><select id="fMes"></select></div>
+    </div>
+    <div class="filters-chips">
+      <div class="fgroup"><label>Plataforma</label><div class="chips" id="fPlat"></div></div>
+      <div class="fgroup"><label>Objetivo</label><div class="chips" id="fObj"></div></div>
+    </div>
+  </div>
+
+  <div class="acct-head" id="acctHead"></div>
+  <div class="hero" id="hero"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Evolución diaria <span class="mini" id="metricToggle"></span></h3>
+      <canvas id="lineChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>Inversión por plataforma</h3>
+      <canvas id="platChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <h3>Consumo diario por plataforma <small style="font-weight:500;color:var(--muted);font-size:12px">· gasto apilado</small></h3>
+    <canvas id="spendPlatChart"></canvas>
+  </div>
+
+  <div class="sec-title">🎯 Desempeño por objetivo <small>· KPI clave y desglose por plataforma</small></div>
+  <div class="obj-grid" id="objGrid"></div>
+
+  <div class="card">
+    <h3>📋 Detalle de campañas
+      <span class="dt-actions">
+        <input id="campSearch" class="camp-search" placeholder="🔎 Filtrar campaña…">
+        <button id="csvBtn" class="csv-btn">⬇️ CSV</button>
+      </span>
+    </h3>
+    <div style="overflow-x:auto">
+      <table id="tbl">
+        <thead><tr>
+          <th data-k="campana">Campaña</th>
+          <th data-k="pais">País</th>
+          <th data-k="plataforma">Plataforma</th>
+          <th data-k="tipo">Objetivo</th>
+          <th data-k="activa">Estado</th>
+          <th data-k="inicio">Inicio</th>
+          <th data-k="fin">Fin</th>
+          <th data-k="spend">Inversión</th>
+          <th data-k="impressions">Impresiones</th>
+          <th data-k="resultado">Resultado</th>
+          <th data-k="kpi">KPI objetivo</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const AG_HEX   = {'Hyundai':'#002c5f','Sin agencia':'#AAAAAA'};
+const PLAT_HEX = {'Meta':'#1877f2','Google Ads':'#ea4335','DV360':'#f9ab00','TikTok':'#111111'};
+const agHex = a => AG_HEX[a] || '#64748b';
+
+// Objetivo crudo -> tipo de objetivo
+const TIPO = {
+  'Reconocimiento':'Awareness','Standard':'Awareness','Tracking':'Awareness','Anuncio gráfico':'Awareness',
+  'Tráfico':'Tráfico','Búsqueda':'Tráfico','Generación de demanda':'Tráfico','LANDING_PAGE':'Tráfico',
+  'Video':'Views','In-Stream Video':'Views',
+  'Ventas':'Conversión','Conversiones':'Conversión','Clientes potenciales':'Conversión','Instalaciones de la app':'Conversión',
+  'Interacción':'Interacción',
+};
+const tipoDe = o => TIPO[o] || 'Otro';
+const TIPO_META = {
+  Awareness:   {color:'#3A75EB', ico:'📣', kpi:'CPM', calc:o=>o.impressions?o.spend/o.impressions*1000:0, vol:['Impresiones','impressions'], volfmt:fmt},
+  'Tráfico':   {color:'#1DCB78', ico:'🌐', kpi:'CPC', calc:o=>o.clicks?o.spend/o.clicks:0,                 vol:['Clics','clicks'],          volfmt:fmt},
+  Views:       {color:'#F6993E', ico:'▶️', kpi:'CPV', calc:o=>o.views?o.spend/o.views:0,                   vol:['Views','views'],           volfmt:fmt},
+  'Conversión':{color:'#EB3B38', ico:'🛒', kpi:'CPA', calc:o=>o.conversions?o.spend/o.conversions:0,       vol:['Conversiones','conversions'], volfmt:fmt2},
+  'Interacción':{color:'#BD8AF2',ico:'💬', kpi:'CPE', calc:o=>o.engagements?o.spend/o.engagements:0,       vol:['Interac.','engagements'],  volfmt:fmt},
+  Otro:        {color:'#6e6e6e', ico:'•',  kpi:'CPM', calc:o=>o.impressions?o.spend/o.impressions*1000:0,  vol:['Impresiones','impressions'], volfmt:fmt},
+};
+
+// Pares métrica de volumen ↔ su KPI de costo (eje doble en la evolución diaria)
+const PAIRS=[
+  {vol:'impressions',volLabel:'Impresiones', kpiLabel:'CPM', color:'#3A75EB', kpi:d=>d.impressions?d.spend/d.impressions*1000:0},
+  {vol:'clicks',     volLabel:'Clics',       kpiLabel:'CPC', color:'#1DCB78', kpi:d=>d.clicks?d.spend/d.clicks:0},
+  {vol:'views',      volLabel:'Views',       kpiLabel:'CPV', color:'#F6993E', kpi:d=>d.views?d.spend/d.views:0},
+  {vol:'conversions',volLabel:'Conversiones',kpiLabel:'CPA', color:'#EB3B38', kpi:d=>d.conversions?d.spend/d.conversions:0},
+];
+
+let DATA={rows:[]}, platSel=new Set(), tipoSel=new Set(), accountSel=new Set(), accountOpts=[];
+let lineChart, platChart, spendPlatChart, sortK='spend', sortDir=-1, lastTableRows=[];
+
+function fmt(n){return new Intl.NumberFormat('es').format(Math.round(n));}
+function fmt2(n){return new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
+// Moneda: Hyundai Panamá factura en USD; no se convierte nada.
+function copModeNow(){return false;}
+function convSpend(r){return r.spend;}
+const money=n=>'$'+fmt2(n);
+const pct=n=>(n*100).toFixed(2)+'%';
+const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+
+// Estado de campaña: sin consumo por más de 5 días = finalizada
+const DIAS_INACTIVA=5;
+function daysBefore(dstr,n){const d=new Date(dstr+'T00:00:00');d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function fechaCorta(dstr){if(!dstr)return '—';const [y,m,d]=dstr.split('-');return `${d}/${m}/${y.slice(2)}`;}
+const esActiva=r=> !!r.last_spend && r.last_spend>=DATA._thr;
+const MES_NOMBRES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+const FLAG={'Panamá':'🇵🇦','Panama':'🇵🇦'};
+
+let SCOPE=null;
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ location.replace('login.html'); return; }
+  const email=session.user.email.toLowerCase();
+  const {data:perm}=await sb.from('permisos').select('*').eq('email',email).maybeSingle();
+  if(!perm){
+    document.body.innerHTML='<div style="font-family:system-ui,sans-serif;padding:50px;max-width:560px;margin:40px auto;color:#1a1f36">'+
+      '<h2>Sin acceso</h2><p style="margin-top:10px">Tu correo <b>'+email+'</b> no está autorizado todavía. Pide a un administrador que te agregue.</p>'+
+      '<p style="margin-top:16px"><a href="#" onclick="sb.auth.signOut().then(()=>location.replace(\'login.html\'));return false">Cerrar sesión</a></p></div>';
+    return;
+  }
+  SCOPE=perm; renderUserBox(email,perm);
+  const d=await (await fetch('data/tracking.json')).json();
+  applyScope(d,perm);
+  DATA=d;
+  DATA._ref=(d.detalle||[]).reduce((m,r)=>(r.last_spend&&r.last_spend>m)?r.last_spend:m,'0000-00-00');
+  DATA._thr=daysBefore(DATA._ref,DIAS_INACTIVA);
+  if(!d.detalle.length){ document.getElementById('meta').textContent='No hay datos disponibles para tu acceso.'; return; }
+  document.getElementById('meta').textContent =
+    `Campañas ${d.rango.min} → ${d.rango.max} · serie diaria ${(d.rango_serie||d.rango).min} → ${(d.rango_serie||d.rango).max} · actualizado ${new Date(d.updated).toLocaleString('es')}`;
+  buildFilters(); render();
+}
+function applyScope(d,perm){
+  if(perm.rol==='admin') return;
+  const ags=perm.agencias||[], cts=perm.cuentas||[];
+  if(!ags.length && !cts.length) return;  // usuario general: ve todo
+  // El scope de cuenta en Hyundai aplica sobre account_name (Petroautos / Hyundai Petroautos / PA_SMB_IMS_Hyundai_)
+  const ok=r=> (!ags.length||ags.includes(r.agencia)) && (!cts.length||cts.includes(r.account_name));
+  d.detalle=d.detalle.filter(ok); d.rows=d.rows.filter(ok);
+}
+function renderUserBox(email,perm){
+  document.getElementById('userBox').innerHTML=
+    `<span class="pill-user">👤 ${email}</span>`+
+    (perm.rol==='admin'?`<a class="pill-dark" href="admin.html">⚙️ Admin</a>`:'')+
+    `<button class="pill-out" onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
+}
+boot();
+
+function buildFilters(){
+  const ag=document.getElementById('fAgencia');
+  ag.innerHTML='<option value="">Todas las agencias</option>'+
+    [...new Set(DATA.detalle.map(r=>r.agencia))].sort().map(a=>`<option>${a}</option>`).join('');
+  ag.onchange=()=>{fillPaises();fillCuentas();fillAccounts();render();};
+
+  const pais=document.getElementById('fPais');
+  pais.onchange=()=>{fillCuentas();fillAccounts();render();};
+  fillPaises();
+
+  const plats=[...new Set(DATA.detalle.map(r=>r.plataforma))].sort();
+  platSel=new Set(plats);
+  const pc=document.getElementById('fPlat'); pc.innerHTML='';
+  plats.forEach(p=>{
+    const c=document.createElement('span'); c.className='chip on'; c.textContent=p;
+    c.onclick=()=>{c.classList.toggle('on');c.classList.contains('on')?platSel.add(p):platSel.delete(p);render();};
+    pc.appendChild(c);
+  });
+
+  const tipos=[...new Set(DATA.detalle.map(r=>tipoDe(r.objetivo)))]
+    .sort((a,b)=>Object.keys(TIPO_META).indexOf(a)-Object.keys(TIPO_META).indexOf(b));
+  tipoSel=new Set(tipos);
+  const oc=document.getElementById('fObj'); oc.innerHTML='';
+  tipos.forEach(t=>{
+    const c=document.createElement('span'); c.className='chip on'; c.dataset.tipo=t;
+    c.style.cssText='border-color:'+TIPO_META[t].color+';background:'+TIPO_META[t].color+';color:#fff';
+    c.textContent=TIPO_META[t].ico+' '+t;
+    c.onclick=()=>{
+      const on=c.classList.toggle('on');
+      if(on){tipoSel.add(t);c.style.cssText='border-color:'+TIPO_META[t].color+';background:'+TIPO_META[t].color+';color:#fff';}
+      else{tipoSel.delete(t);c.style.cssText='border-color:#e7eaf3;background:#fff;color:#7b8499';}
+      render();
+    };
+    oc.appendChild(c);
+  });
+
+  // Año y Mes: del detalle si trae 'mes' (filtra todo); si no, de la serie diaria
+  const periodSrc = DATA.detalle.some(r=>r.mes)
+    ? [...new Set(DATA.detalle.map(r=>r.mes).filter(Boolean))]
+    : [...new Set(DATA.rows.map(r=>r.date.slice(0,7)))];
+  const anios=[...new Set(periodSrc.map(m=>m.slice(0,4)))].sort();
+  document.getElementById('fAnio').innerHTML='<option value="">Todos</option>'+anios.map(y=>`<option>${y}</option>`).join('');
+  const meses=[...new Set(periodSrc.map(m=>m.slice(5,7)))].sort();
+  document.getElementById('fMes').innerHTML='<option value="">Todos</option>'+meses.map(m=>`<option value="${m}">${MES_NOMBRES[m]}</option>`).join('');
+  document.getElementById('fAnio').onchange=render;
+  document.getElementById('fMes').onchange=render;
+
+  document.getElementById('fEstado').onchange=render;
+
+  // Planner / Implementador (solo si el dato ya trae esas columnas)
+  setupPlannerFilters();
+
+  fillCuentas(); fillAccounts();
+
+  const mt=document.getElementById('metricToggle');
+  PAIRS.forEach((P,i)=>{
+    const c=document.createElement('span'); c.className='chip'+(i===0?' on':''); c.textContent=`${P.volLabel} vs ${P.kpiLabel}`; c.dataset.p=i;
+    c.onclick=()=>{mt.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');render();};
+    mt.appendChild(c);
+  });
+
+  document.querySelectorAll('#tbl th').forEach(th=>{
+    th.onclick=()=>{const k=th.dataset.k;sortDir=(sortK===k)?-sortDir:-1;sortK=k;render();};
+  });
+
+  // Multi-select "Account name"
+  const msPanel=document.getElementById('msAccountPanel');
+  document.getElementById('msAccountBtn').onclick=e=>{e.stopPropagation();msPanel.classList.toggle('open');};
+  document.getElementById('msAccountSearch').oninput=renderAccountOpts;
+  document.addEventListener('click',e=>{ if(!document.getElementById('msAccount').contains(e.target)) msPanel.classList.remove('open'); });
+
+  // Buscador de campaña en el detalle
+  document.getElementById('campSearch').oninput=renderTable;
+  // Descargar CSV del detalle
+  document.getElementById('csvBtn').onclick=downloadCSV;
+}
+
+function downloadCSV(){
+  const rows=lastTableRows||[];
+  if(!rows.length){ return; }
+  const num=n=>Math.round((+n||0)*100)/100;
+  const cols=[
+    ['Cuenta',r=>r.cuenta],['Account name',r=>r.account_name],
+    ['Campaña',r=>r.campana],['País',r=>r.pais],
+    ['Plataforma',r=>r.plataforma],['Objetivo',r=>r.tipo],['Estado',r=>r.activa?'Activa':'Finalizada'],
+    ['Inicio',r=>r.inicio],['Fin',r=>r.fin],
+    ['Inversión',r=>num(r.spend)],['Impresiones',r=>r.impressions],['Clics',r=>r.clicks],
+    ['Views',r=>r.views],['Conversiones',r=>num(r.conversions)],
+    ['CTR %',r=>r.impressions?num(r.clicks/r.impressions*100):0],
+    ['CPC',r=>r.clicks?num(r.spend/r.clicks):0],
+    ['CPM',r=>r.impressions?num(r.spend/r.impressions*1000):0],
+    ['CPV',r=>r.views?num(r.spend/r.views):0],
+    ['CPA',r=>r.conversions?num(r.spend/r.conversions):0],
+  ];
+  const q=v=>{v=(v==null?'':String(v));return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const lines=[cols.map(c=>q(c[0])).join(',')];
+  rows.forEach(r=>lines.push(cols.map(c=>q(c[1](r))).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='detalle_campanas_hyundai.csv'; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function setupPlannerFilters(){
+  const has = DATA.detalle.length && ('planner' in DATA.detalle[0]);
+  document.getElementById('gPlanner').style.display = has?'flex':'none';
+  document.getElementById('gImplementador').style.display = has?'flex':'none';
+  if(!has) return;
+  const fill=(field,selId)=>{
+    const vals=[...new Set(DATA.detalle.map(r=>r[field]).filter(Boolean))].sort();
+    const sel=document.getElementById(selId);
+    sel.innerHTML='<option value="">Todos</option>'+vals.map(v=>`<option>${v}</option>`).join('');
+    sel.onchange=render;
+  };
+  fill('planner','fPlanner');
+  fill('implementador','fImplementador');
+}
+
+function fillPaises(){
+  const a=document.getElementById('fAgencia').value;
+  const paises=[...new Set(DATA.detalle.filter(r=>!a||r.agencia===a).map(r=>r.pais))].sort();
+  const sel=document.getElementById('fPais'); const cur=sel.value;
+  sel.innerHTML='<option value="">Todos los países</option>'+paises.map(p=>`<option ${p===cur?'selected':''}>${p}</option>`).join('');
+}
+function fillCuentas(){
+  const a=document.getElementById('fAgencia').value, p=document.getElementById('fPais').value;
+  const cuentas=[...new Set(DATA.detalle.filter(r=>(!a||r.agencia===a)&&(!p||r.pais===p)).map(r=>r.cuenta))].sort();
+  const sel=document.getElementById('fCuenta'); const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las cuentas</option>'+cuentas.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
+  sel.onchange=()=>{fillAccounts();render();};
+}
+function fillAccounts(){
+  const g=document.getElementById('gAccount');
+  if(!DATA.detalle.some(r=>r.account_name)){ g.style.display='none'; return; }
+  g.style.display='flex';
+  const a=V('fAgencia'), p=V('fPais'), c=V('fCuenta');
+  accountOpts=[...new Set(DATA.detalle.filter(r=>(!a||r.agencia===a)&&(!p||r.pais===p)&&(!c||r.cuenta===c)).map(r=>r.account_name).filter(Boolean))].sort();
+  accountSel=new Set([...accountSel].filter(x=>accountOpts.includes(x)));  // conservar solo válidos
+  renderAccountOpts(); updateAccountBtn();
+}
+function renderAccountOpts(){
+  const q=(document.getElementById('msAccountSearch').value||'').toLowerCase();
+  const list=accountOpts.filter(x=>!q||x.toLowerCase().includes(q));
+  const box=document.getElementById('msAccountOpts');
+  box.innerHTML=list.length?list.map(x=>`<label class="ms-opt"><input type="checkbox" value="${esc(x)}" ${accountSel.has(x)?'checked':''}>${esc(x)}</label>`).join('')
+    :'<div class="ms-empty">Sin resultados</div>';
+  box.querySelectorAll('input').forEach(cb=>cb.onchange=()=>{
+    cb.checked?accountSel.add(cb.value):accountSel.delete(cb.value);
+    updateAccountBtn(); render();
+  });
+}
+function updateAccountBtn(){
+  document.getElementById('msAccountBtn').textContent =
+    accountSel.size===0 ? 'Todos' : accountSel.size+' seleccionado'+(accountSel.size>1?'s':'');
+}
+
+const V=id=>document.getElementById(id).value;
+
+function filtered(){
+  // Serie diaria (no trae objetivo ni estado): agencia, país, cuenta, planner, plataforma, año, mes
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
+  return DATA.rows.filter(r=>
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!accountSel.size||accountSel.has(r.account_name))&&
+    (!pl||r.planner===pl)&&(!im||r.implementador===im)&&platSel.has(r.plataforma)&&
+    (!yr||r.date.slice(0,4)===yr)&&(!mo||r.date.slice(5,7)===mo))
+    .map(r=>({...r, spend:convSpend(r)}));
+}
+const sum=(arr,k)=>arr.reduce((s,r)=>s+r[k],0);
+
+function detalleFiltered(){
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
+  return (DATA.detalle||[]).filter(r=>
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!accountSel.size||accountSel.has(r.account_name))&&
+    platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo))&&
+    (!est || (est==='act'?esActiva(r):!esActiva(r)))&&
+    (!pl||r.planner===pl)&&(!im||r.implementador===im)&&
+    (!yr || !r.mes || r.mes.slice(0,4)===yr)&&(!mo || !r.mes || r.mes.slice(5,7)===mo))
+    .map(r=>({...r, spend:convSpend(r)}));
+}
+// última fecha con consumo por campaña (para estado a nivel campaña)
+function lastSpendPorCampana(det){
+  const m={}; det.forEach(r=>{if(r.last_spend&&(!m[r.campana]||r.last_spend>m[r.campana]))m[r.campana]=r.last_spend;});
+  return m;
+}
+
+function render(){
+  const rows=filtered(), det=detalleFiltered();
+  renderAcctHead(det); renderHero(det);
+  renderLine(rows); renderSpendPlat(rows); renderPlat(det); renderObj(det); renderTable();
+  document.getElementById('foot').textContent=
+    `${new Set(det.map(r=>r.campana)).size} campañas · ${new Set(det.map(r=>r.plataforma)).size} plataformas · ${new Set(det.map(r=>r.objetivo)).size} objetivos · Fuente: vw_marketing_daily_campaign (BigQuery)`;
+}
+
+function renderAcctHead(det){
+  const c=document.getElementById('fCuenta').value, a=document.getElementById('fAgencia').value;
+  const name=c||(a||'Hyundai');
+  const last=lastSpendPorCampana(det), total=Object.keys(last).length;
+  const activas=Object.values(last).filter(ls=>ls>=DATA._thr).length;
+  const pctAct=total?activas/total:0;
+  let st,col,bg;
+  if(pctAct>=.6){st='Saludable';col='#15803d';bg='#dcfce7';}
+  else if(pctAct>=.3){st='Actividad media';col='#b45309';bg='#fef3c7';}
+  else {st='Crítico';col='#b91c1c';bg='#fee2e2';}
+  const paises=[...new Set(det.map(r=>r.pais))];
+  const pais=paises.length===1?paises[0]:(paises.length>1?paises.length+' países':'');
+  document.getElementById('acctHead').innerHTML=`
+    <div class="a-left">
+      <span class="ag-flag">🇵🇦</span>
+      <div>
+        <div class="a-name">${name}</div>
+        <div class="a-meta">
+          <span>Petroautos · Panamá</span>
+          ${pais&&pais!=='Panamá'?`<span class="pais-badge">${pais}</span>`:''}
+          <span>· ${activas}/${total} campañas activas</span>
+        </div>
+      </div>
+    </div>
+    <div class="a-badge" style="color:${col};background:${bg}"><span class="bdot"></span>${st}</div>`;
+}
+
+function renderHero(det){
+  const camps=new Set(det.map(r=>r.campana));
+  const plats=[...new Set(det.map(r=>r.plataforma))];
+  const last=lastSpendPorCampana(det);
+  const activas=Object.values(last).filter(ls=>ls>=DATA._thr).length;
+  const spend=sum(det,'spend');
+  const cards=[
+    {label:'Campañas',          val:fmt(camps.size),  sub:'en el periodo',                 dot:'#3A75EB'},
+    {label:'Plataformas',       val:plats.length,     sub:plats.join(' · ')||'—',          dot:'#BD8AF2'},
+    {label:'Campañas activas',  val:activas,          sub:'',dot:'#1DCB78'},
+    {label:'Inversión',         val:money(spend),     sub:'USD', dot:'#F6993E'},
+  ];
+  document.getElementById('hero').innerHTML=cards.map(c=>`
+    <div class="hcard"><span class="h-dot" style="background:${c.dot}"></span>
+      <div class="h-label">${c.label}</div>
+      <div class="h-val">${c.val}</div>
+      <div class="h-sub">${c.sub}</div>
+    </div>`).join('');
+}
+
+function renderLine(rows){
+  const i=+(document.querySelector('#metricToggle .chip.on')?.dataset.p||0);
+  const P=PAIRS[i];
+  const m={};
+  rows.forEach(r=>{const d=m[r.date]||(m[r.date]={spend:0,impressions:0,clicks:0,views:0,conversions:0});
+    ['spend','impressions','clicks','views','conversions'].forEach(k=>d[k]+=r[k]);});
+  const dates=Object.keys(m).sort();
+  const volVals=dates.map(d=>m[d][P.vol]);
+  const kpiVals=dates.map(d=>P.kpi(m[d]));
+  lineChart&&lineChart.destroy();
+  lineChart=new Chart(document.getElementById('lineChart'),{
+    data:{labels:dates,datasets:[
+      {type:'bar',label:P.volLabel,data:volVals,yAxisID:'y',backgroundColor:P.color+'40',
+        borderColor:P.color+'66',borderWidth:1,borderRadius:3,order:2},
+      {type:'line',label:P.kpiLabel,data:kpiVals,yAxisID:'y1',borderColor:P.color,backgroundColor:P.color,
+        tension:.35,pointRadius:0,borderWidth:2.5,order:1}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,labels:{color:'#7b8499',usePointStyle:true,boxWidth:8,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'
+          ? ` ${P.kpiLabel}: ${money(c.parsed.y)}`
+          : ` ${P.volLabel}: ${fmt(c.parsed.y)}`}}},
+      scales:{
+        x:{ticks:{color:'#7b8499',maxTicksLimit:8},grid:{display:false}},
+        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499',callback:v=>fmt(v)},
+           grid:{color:'#eef1f7'},title:{display:true,text:P.volLabel,color:'#7b8499',font:{size:10}}},
+        y1:{position:'right',beginAtZero:true,ticks:{color:P.color,callback:v=>'$'+(+v).toFixed(2)},
+           grid:{display:false},title:{display:true,text:P.kpiLabel,color:P.color,font:{size:10}}}
+      }}});
+}
+function renderSpendPlat(rows){
+  const plats=[...new Set(rows.map(r=>r.plataforma))].sort();
+  const dates=[...new Set(rows.map(r=>r.date))].sort();
+  const md={}; rows.forEach(r=>{ (md[r.date]=md[r.date]||{})[r.plataforma]=(md[r.date][r.plataforma]||0)+r.spend; });
+  const datasets=plats.map(pl=>({label:pl,data:dates.map(d=>(md[d]&&md[d][pl])||0),backgroundColor:PLAT_HEX[pl]||'#999',stack:'s',borderRadius:2}));
+  spendPlatChart&&spendPlatChart.destroy();
+  spendPlatChart=new Chart(document.getElementById('spendPlatChart'),{type:'bar',
+    data:{labels:dates,datasets},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{color:'#6e6e6e',font:{size:11},usePointStyle:true,padding:12}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${money(c.parsed.y)}`}}},
+      scales:{x:{stacked:true,ticks:{color:'#6e6e6e',maxTicksLimit:8},grid:{display:false}},
+              y:{stacked:true,beginAtZero:true,ticks:{color:'#6e6e6e',callback:v=>'$'+fmt(v)},grid:{color:'#eef1f7'}}}}});
+}
+
+function renderPlat(rows){
+  const m={}; rows.forEach(r=>{m[r.plataforma]=(m[r.plataforma]||0)+r.spend;});
+  const labels=Object.keys(m).sort((a,b)=>m[b]-m[a]);
+  platChart&&platChart.destroy();
+  platChart=new Chart(document.getElementById('platChart'),{type:'doughnut',
+    data:{labels,datasets:[{data:labels.map(l=>m[l]),backgroundColor:labels.map(l=>PLAT_HEX[l]||'#999'),borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,cutout:'64%',plugins:{legend:{position:'bottom',labels:{color:'#7b8499',padding:14,font:{size:11},usePointStyle:true}}}}});
+}
+
+function renderObj(rows){
+  const tipos={};
+  rows.forEach(r=>{
+    const t=tipoDe(r.objetivo);
+    const o=tipos[t]||(tipos[t]={_plat:{},spend:0,impressions:0,clicks:0,reach:0,views:0,conversions:0,engagements:0});
+    ['spend','impressions','clicks','reach','views','conversions','engagements'].forEach(k=>o[k]+=r[k]);
+    const p=o._plat[r.plataforma]||(o._plat[r.plataforma]={spend:0,impressions:0,clicks:0,reach:0,views:0,conversions:0,engagements:0});
+    ['spend','impressions','clicks','reach','views','conversions','engagements'].forEach(k=>p[k]+=r[k]);
+  });
+  const order=Object.keys(TIPO_META);
+  document.getElementById('objGrid').innerHTML=order.filter(t=>tipos[t]).map(t=>{
+    const M=TIPO_META[t], o=tipos[t], kpiVal=M.calc(o);
+    const maxP=Math.max(...Object.values(o._plat).map(p=>p.spend));
+    const platRows=Object.entries(o._plat).sort((a,b)=>b[1].spend-a[1].spend).map(([pl,p])=>{
+      const pk=M.calc(p);
+      return `<div class="o-plat">
+        <div class="p-top"><span class="p-name"><span class="dot" style="background:${PLAT_HEX[pl]||'#999'}"></span>${pl}</span>
+          <span class="p-val">${money(p.spend)} · ${M.kpi} ${money(pk)}</span></div>
+        <div class="p-bar"><i style="width:${maxP?p.spend/maxP*100:0}%;background:${PLAT_HEX[pl]||'#999'}"></i></div>
+      </div>`;
+    }).join('');
+    return `<div class="obj">
+      <div class="o-head" style="background:${M.color}">
+        <div class="o-name">${M.ico} ${t}</div>
+        <div class="o-kpi"><b>${money(kpiVal)}</b><span>${M.kpi}</span></div>
+      </div>
+      <div class="o-body">
+        <div class="o-stats">
+          <div>Inversión<b>${money(o.spend)}</b></div>
+          <div>${M.vol[0]}<b>${M.volfmt(o[M.vol[1]])}</b></div>
+          <div>CTR<b>${pct(o.impressions?o.clicks/o.impressions:0)}</b></div>
+        </div>
+        <div class="o-plat-title">Por plataforma</div>
+        ${platRows}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// KPI aplicable según tipo de objetivo
+const KPI_APLIC={Awareness:'cpm','Tráfico':'cpc',Views:'cpv','Conversión':'cpa','Interacción':'ctr',Otro:'cpm'};
+const trunc=(s,n)=>(s&&s.length>n)?s.slice(0,n-1)+'…':(s||'');
+
+function renderTable(){
+  // Agrega por campaña·plataforma·objetivo (suma meses si el filtro abarca varios)
+  const groups={};
+  detalleFiltered().forEach(o=>{
+    const k=o.campana+'|'+o.plataforma+'|'+o.objetivo;
+    const g=groups[k]||(groups[k]={agencia:o.agencia,pais:o.pais,cuenta:o.cuenta,account_name:o.account_name,planner:o.planner,implementador:o.implementador,
+      campana:o.campana,plataforma:o.plataforma,objetivo:o.objetivo,inicio:o.inicio,fin:o.fin,last_spend:o.last_spend,
+      spend:0,impressions:0,clicks:0,reach:0,views:0,engagements:0,conversions:0});
+    ['spend','impressions','clicks','reach','views','engagements','conversions'].forEach(kk=>g[kk]+=o[kk]||0);
+    if(o.inicio<g.inicio)g.inicio=o.inicio;
+    if(o.fin>g.fin)g.fin=o.fin;
+    if(o.last_spend&&(!g.last_spend||o.last_spend>g.last_spend))g.last_spend=o.last_spend;
+  });
+  let arr=Object.values(groups).map(o=>{
+    const tipo=tipoDe(o.objetivo), M=TIPO_META[tipo];
+    return {...o, tipo,
+      activa:esActiva(o),
+      resultado:o[M.vol[1]],
+      kpi:M.calc(o)};
+  });
+  const q=(document.getElementById('campSearch').value||'').trim().toLowerCase();
+  if(q) arr=arr.filter(o=>(o.campana||'').toLowerCase().includes(q));
+  arr.sort((x,y)=>{const A=x[sortK],B=y[sortK];return ((typeof A==='string')?A.localeCompare(B):(A<B?1:-1))*sortDir;});
+  lastTableRows=arr;
+
+  document.querySelector('#tbl tbody').innerHTML=arr.map(o=>{
+    const M=TIPO_META[o.tipo];
+    const resTxt=`${M.vol[0]} <b>${M.volfmt(o.resultado)}</b>`;
+    const kpiTxt=(o.kpi>0)?`<span style="color:${M.color};font-weight:600">${M.kpi} ${money(o.kpi)}</span>`:'—';
+    return `<tr>
+      <td><span class="dot" style="background:${PLAT_HEX[o.plataforma]||'#999'};margin-right:6px" title="${o.plataforma}"></span><span class="camp" title="${o.campana.replace(/"/g,'&quot;')}" style="display:inline-block;vertical-align:bottom">${trunc(o.campana,44)}</span></td>
+      <td>${o.pais!=='—'?`<span class="pais-badge">${o.pais}</span>`:'—'}</td>
+      <td><span class="dot" style="background:${PLAT_HEX[o.plataforma]||'#999'};margin-right:6px"></span>${o.plataforma}</td>
+      <td><span class="o-pill" style="background:${M.color}">${M.ico} ${o.tipo}</span></td>
+      <td><span class="est ${o.activa?'activa':'fin'}">${o.activa?'● Activa':'○ Finalizada'}</span></td>
+      <td>${fechaCorta(o.inicio)}</td>
+      <td>${fechaCorta(o.fin)}</td>
+      <td><b>${money(o.spend)}</b></td>
+      <td>${fmt(o.impressions)}</td>
+      <td>${resTxt}</td>
+      <td>${kpiTxt}</td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

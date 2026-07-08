@@ -1,0 +1,7 @@
+node_modules/
+# credenciales de la Service Account — NUNCA subir al repo
+sa.json
+*.sa.json
+gcp-key.json
+.env
+.DS_Store

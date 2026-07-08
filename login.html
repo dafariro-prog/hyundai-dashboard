@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingreso · HYUNDAI</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#f5f5f5;color:#151515;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#fff;border:1px solid #e7eaf3;border-radius:18px;padding:34px 30px;max-width:380px;width:100%;
+    box-shadow:0 10px 40px rgba(0,44,95,.10);text-align:center}
+  .brand{background:#002c5f;border-radius:14px;padding:22px 16px;color:#fff;margin-bottom:22px}
+  .brand p{font-size:12px;opacity:.85;letter-spacing:.3px}
+  label{display:block;text-align:left;font-size:12px;color:#7b8499;font-weight:600;margin:14px 0 7px;text-transform:uppercase;letter-spacing:.4px}
+  input{width:100%;padding:12px 14px;border:1.5px solid #e7eaf3;border-radius:10px;font-size:14px;outline:none}
+  input:focus{border-color:#002c5f;box-shadow:0 0 0 3px rgba(0,44,95,.14)}
+  button{width:100%;margin-top:18px;padding:12px;border:0;border-radius:10px;background:#002c5f;color:#fff;
+    font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  button:hover{background:#001b3a}
+  button:disabled{opacity:.6;cursor:default}
+  .msg{margin-top:16px;font-size:13px;padding:11px;border-radius:10px;display:none}
+  .msg.ok{display:block;background:#dcfce7;color:#15803d}
+  .msg.err{display:block;background:#fee2e2;color:#b91c1c}
+  .hint{font-size:11px;color:#9aa3b2;margin-top:14px;line-height:1.5}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div style="font-size:30px;font-weight:600;letter-spacing:6px;margin-bottom:6px">HYUNDAI</div>
+      <p>Tracking de Campañas</p>
+      <p style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;opacity:.8">by <img src="assets/garnier_brand_white.png" alt="Grupo Garnier" style="height:13px"></p>
+    </div>
+    <form id="f">
+      <label for="email">Correo</label>
+      <input id="email" type="email" placeholder="nombre@empresa.com" required autocomplete="email">
+      <label for="pass">Contraseña</label>
+      <input id="pass" type="password" placeholder="••••••••" required autocomplete="current-password" minlength="6">
+      <button id="btn" type="submit">Entrar</button>
+    </form>
+    <div class="msg" id="msg"></div>
+    <div class="hint">Ingresa con el correo y la contraseña que te asignó tu administrador.</div>
+  </div>
+  <script src="config.js"></script>
+  <script>
+    const msg=(t,cls)=>{const m=document.getElementById('msg');m.textContent=t;m.className='msg '+cls;};
+    sb.auth.getSession().then(({data:{session}})=>{ if(session) location.replace('index.html'); });
+
+    document.getElementById('f').addEventListener('submit', async e=>{
+      e.preventDefault();
+      const email=document.getElementById('email').value.trim().toLowerCase();
+      const password=document.getElementById('pass').value;
+      const btn=document.getElementById('btn'); btn.disabled=true; btn.textContent='Entrando…';
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(!error){ location.replace('index.html'); return; }
+      finish(btn, /invalid login credentials/i.test(error.message)
+        ? 'Correo o contraseña incorrectos.'
+        : ('Error: '+(error.message||JSON.stringify(error))));
+    });
+    function finish(btn,t){ btn.disabled=false; btn.textContent='Entrar'; msg(t,'err'); }
+  </script>
+</body>
+</html>
