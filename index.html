@@ -167,6 +167,9 @@
   .tb-by{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:500}
   .tb-bylogo{height:15px;display:block;opacity:.85}
   .tb-right{display:flex;align-items:center;gap:9px;font-size:12.5px;flex-wrap:wrap}
+  .nav{display:flex;gap:8px;margin-bottom:14px}
+  .nav a{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;box-shadow:var(--shadow)}
+  .nav a.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .pill-user{background:#f3f3f3;border-radius:22px;padding:8px 15px;font-weight:500;color:#3D3D3D}
   .pill-dark{background:var(--accent);color:#fff;border-radius:22px;padding:8px 15px;font-weight:600;text-decoration:none}
   .pill-out{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 15px;font-weight:600;color:var(--txt);cursor:pointer}
@@ -188,6 +191,11 @@
       <span class="tb-by">by <img class="tb-bylogo" src="assets/garnier_brand_black.png" alt="Grupo Garnier"></span>
     </div>
     <div class="tb-right" id="userBox"></div>
+  </div>
+
+  <div class="nav">
+    <a href="overview.html">📊 Resumen ejecutivo</a>
+    <a href="index.html" class="on">📋 Detalle de campañas</a>
   </div>
   <div class="meta-line" id="meta">Cargando…</div>
 

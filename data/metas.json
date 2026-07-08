@@ -1,0 +1,4 @@
+{
+  "_nota": "Metas mensuales del cliente para el Resumen ejecutivo. Una entrada por mes 'YYYY-MM'. inversion=presupuesto/objetivo de inversión del mes (USD); leads=meta de leads del mes; cpl=costo por lead objetivo (USD, la meta es no superarlo). Deja null lo que no tenga meta.",
+  "2026-07": { "inversion": null, "leads": null, "cpl": null }
+}

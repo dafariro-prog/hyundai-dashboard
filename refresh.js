@@ -54,6 +54,7 @@ const Q_DETALLE = `
 
 const Q_SERIE = `
   SELECT date, platform, account_name,
+    COALESCE(objective,'(sin objetivo)') AS objetivo,
     ROUND(SUM(spend),2) spend,
     CAST(SUM(impressions) AS INT64) impressions,
     CAST(SUM(clicks) AS INT64) clicks,
@@ -62,7 +63,7 @@ const Q_SERIE = `
   FROM ${VIEW}
   WHERE date >= @since
     AND account_name IN UNNEST(@accounts)
-  GROUP BY 1,2,3`;
+  GROUP BY 1,2,3,4`;
 
 async function run(query) {
   const [rows] = await bq.query({ query, params: { accounts, since: SINCE }, location: 'US' });
@@ -108,6 +109,7 @@ async function withRetry(fn, tries = 5) {
     if (!h) continue;
     rows.push({
       date: dval(r.date), agencia: h.ag, pais: h.pais, cuenta: h.hom, account_name: r.account_name, plataforma: r.platform,
+      objetivo: r.objetivo,
       spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks),
       views: num(r.views), conversions: num(r.conversions),
     });

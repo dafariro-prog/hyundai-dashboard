@@ -56,7 +56,7 @@
     <div class="htitle"><span style="font-size:20px;font-weight:600;letter-spacing:3px">HYUNDAI</span><span style="opacity:.6;font-size:12px">by Garnier</span><h1 style="font-size:16px">· Administración de accesos</h1></div>
     <div class="right">
       <span id="who"></span>
-      <a href="index.html">← Dashboard</a>
+      <a href="overview.html">← Dashboard</a>
       <button id="logout">Salir</button>
     </div>
   </header>
@@ -96,7 +96,7 @@ const msg=(t,cls)=>{const m=document.getElementById('msg');m.textContent=t;m.cla
   ME=session.user.email.toLowerCase();
   const {data:perm}=await sb.from('permisos').select('rol').eq('email',ME).maybeSingle();
   if(!perm || perm.rol!=='admin'){
-    document.getElementById('gate').innerHTML='No tienes permisos de administrador.<br><a href="index.html">Ir al dashboard</a>';
+    document.getElementById('gate').innerHTML='No tienes permisos de administrador.<br><a href="overview.html">Ir al dashboard</a>';
     return;
   }
   document.getElementById('gate').style.display='none';
