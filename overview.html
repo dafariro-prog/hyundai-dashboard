@@ -122,6 +122,18 @@
     </div>
   </div>
 
+  <div class="sec-title">📅 Acumulado del mes (MTD) <small>· mes en curso vs mismo periodo del mes anterior</small></div>
+  <div class="cards">
+    <div class="card">
+      <h3>MTD vs mes anterior <small id="momLbl"></small></h3>
+      <div style="overflow-x:auto"><table id="momTbl">
+        <thead><tr><th>Métrica</th><th>Este mes</th><th>Mes anterior*</th><th>Δ</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div class="meta-line" style="margin:8px 2px 0">* mismo rango de días (del 1 al día en curso) del mes anterior, para una comparación justa.</div>
+    </div>
+    <div class="card"><h3>Tendencia mensual <small>· inversión y leads por mes</small></h3><canvas id="monthChart"></canvas></div>
+  </div>
+
   <div class="sec-title">📈 Evolución del mes</div>
   <div class="cards">
     <div class="card"><h3>Leads y CPL por día <small>· mes en curso</small></h3><canvas id="leadChart"></canvas></div>
@@ -153,7 +165,7 @@ const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp
 function addDays(dstr,n){const d=new Date(dstr+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 function mesLargo(m){return (MES_NOMBRES[m.slice(5,7)]||m)+' '+m.slice(0,4);}
 
-let DATA={rows:[],detalle:[]}, METAS={}, MARCA={serie:[]}, leadChart;
+let DATA={rows:[],detalle:[]}, METAS={}, MARCA={serie:[]}, leadChart, monthChart;
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -228,6 +240,7 @@ function render(){
   renderKpis(M,C,P,cpl,reachMTD,traf);
   renderGoals(mesA,M,cpl(M));
   renderWow(C,P,cpl);
+  renderMonthly(mesA,maxDate);
   renderLeadChart(mtdRows,mesA);
   renderPlatTable(mtdRows);
   renderMarca();
@@ -308,6 +321,51 @@ function renderWow(C,P,cpl){
   document.querySelector('#wowTbl tbody').innerHTML=rows.map(r=>`
     <tr><td>${r.name}</td><td><b>${r.fmt(r.c)}</b></td><td>${r.fmt(r.p)}</td>
       <td>${deltaHTML(r.c,r.p,r.up)}</td></tr>`).join('');
+}
+
+function renderMonthly(mesA,maxDate){
+  const dayN=+maxDate.slice(8,10);
+  const [y,mo]=mesA.split('-').map(Number);
+  const pd=new Date(y,mo-2,1);           // primer día del mes anterior
+  const prevMes=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0');
+  const curR=DATA.rows.filter(r=>r.date.slice(0,7)===mesA);                       // MTD (hasta el día en curso)
+  const prevR=DATA.rows.filter(r=>r.date.slice(0,7)===prevMes && +r.date.slice(8,10)<=dayN); // mismo rango de días
+  const agg=a=>({spend:sum(a,'spend'),leads:leadsOf(a),impressions:sum(a,'impressions'),clicks:sum(a,'clicks')});
+  const A=agg(curR), B=agg(prevR);
+  const cpl=x=>x.leads?x.spend/x.leads:0;
+  document.getElementById('momLbl').textContent='· al día '+dayN;
+  const rows=[
+    {name:'Inversión',    c:A.spend, p:B.spend, fmt:money0, up:true},
+    {name:'Leads',        c:A.leads, p:B.leads, fmt:fmt,    up:true, hide:!HAS_OBJ()},
+    {name:'Costo por Lead',c:cpl(A), p:cpl(B), fmt:money,   up:false, hide:!HAS_OBJ()},
+    {name:'Impresiones',  c:A.impressions, p:B.impressions, fmt:fmt, up:true},
+    {name:'Tráfico (clics)',c:A.clicks, p:B.clicks, fmt:fmt, up:true},
+  ].filter(r=>!r.hide);
+  document.querySelector('#momTbl tbody').innerHTML=rows.map(r=>`
+    <tr><td>${r.name}</td><td><b>${r.fmt(r.c)}</b></td><td>${r.fmt(r.p)}</td>
+      <td>${r.p?deltaHTML(r.c,r.p,r.up):'<span class="delta flat">nuevo</span>'}</td></tr>`).join('');
+
+  // Tendencia mensual (todos los meses con data)
+  const byM={};
+  DATA.rows.forEach(r=>{const m=r.date.slice(0,7); const g=byM[m]||(byM[m]={spend:0,leads:0});
+    g.spend+=r.spend||0; if(HAS_OBJ()&&LEAD_OBJ.has(r.objetivo)) g.leads+=r.conversions||0;});
+  const meses=Object.keys(byM).sort();
+  const lbl=meses.map(m=>(MES_NOMBRES[m.slice(5,7)]||m).slice(0,3));
+  const spend=meses.map(m=>byM[m].spend), leads=meses.map(m=>byM[m].leads);
+  const curIdx=meses.indexOf(mesA);
+  monthChart&&monthChart.destroy();
+  monthChart=new Chart(document.getElementById('monthChart'),{
+    data:{labels:lbl,datasets:[
+      {type:'bar',label:'Inversión',data:spend,yAxisID:'y',order:2,borderRadius:4,
+        backgroundColor:meses.map((m,i)=>i===curIdx?'#002c5f':'#002c5f55')},
+      {type:'line',label:'Leads',data:leads,yAxisID:'y1',order:1,borderColor:'#ea4335',backgroundColor:'#ea4335',tension:.35,pointRadius:3,borderWidth:2.5}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#7b8499',usePointStyle:true,boxWidth:8,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` Leads: ${fmt(c.parsed.y)}`:` Inversión: ${money0(c.parsed.y)}`}}},
+      scales:{x:{ticks:{color:'#7b8499'},grid:{display:false}},
+        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499',callback:v=>'$'+fmt(v)},grid:{color:'#eef1f7'}},
+        y1:{position:'right',beginAtZero:true,ticks:{color:'#ea4335'},grid:{display:false}}}}});
 }
 
 function renderLeadChart(mtdRows,mesA){
