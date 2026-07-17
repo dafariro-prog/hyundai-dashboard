@@ -29,9 +29,10 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Refrescar data desde BigQuery
+      - name: Refrescar data desde BigQuery (+ GA4)
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          GA4_PROPERTY_ID: ${{ vars.GA4_PROPERTY_ID }}
         run: node refresh.js
 
       - name: Commit si hubo cambios

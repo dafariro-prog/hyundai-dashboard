@@ -86,9 +86,49 @@ async function withRetry(fn, tries = 5) {
   throw lastErr;
 }
 
+// --- Google Analytics 4 (Data API) ---
+// Trae tráfico del sitio (sesiones + usuarios) por día usando la MISMA Service Account.
+// Requiere:
+//   - env GA4_PROPERTY_ID = id numérico de la propiedad GA4 (ej. 456789123)
+//   - que la SA tenga rol "Lector" en esa propiedad y la "Google Analytics Data API" habilitada.
+// No es fatal: si algo falla, se registra y el refresco de pauta continúa igual.
+const GA4_PID = process.env.GA4_PROPERTY_ID || '';
+async function fetchGA4() {
+  if (!GA4_PID) { console.log('GA4: sin GA4_PROPERTY_ID, se omite tráfico del sitio.'); return null; }
+  try {
+    const { BetaAnalyticsDataClient } = require('@google-analytics/data');
+    const client = new BetaAnalyticsDataClient();
+    const [resp] = await client.runReport({
+      property: `properties/${GA4_PID}`,
+      dateRanges: [{ startDate: SINCE, endDate: 'today' }],
+      dimensions: [{ name: 'date' }],
+      metrics: [{ name: 'sessions' }, { name: 'totalUsers' }],
+      orderBys: [{ dimension: { dimensionName: 'date' } }],
+      limit: 100000,
+    });
+    const rows = (resp.rows || []).map(r => {
+      const d = r.dimensionValues[0].value; // YYYYMMDD
+      return {
+        date: `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`,
+        sessions: num(r.metricValues[0].value),
+        users: num(r.metricValues[1].value),
+      };
+    }).filter(r => r.date >= SINCE);
+    console.log(`GA4 OK · propiedad ${GA4_PID} · ${rows.length} días de tráfico`);
+    return { property: GA4_PID, updated: new Date().toISOString(), rows };
+  } catch (e) {
+    console.error('GA4: no se pudo traer el tráfico (se continúa sin él):', e.message);
+    return null;
+  }
+}
+
 (async () => {
   console.log(`Consultando BigQuery · Hyundai · ${accounts.length} cuentas · desde ${SINCE}…`);
-  const [det, ser] = await withRetry(() => Promise.all([run(Q_DETALLE), run(Q_SERIE)]));
+  const [det, ser, ga4] = await Promise.all([
+    withRetry(() => run(Q_DETALLE)),
+    withRetry(() => run(Q_SERIE)),
+    fetchGA4(),
+  ]);
 
   const detalle = [];
   for (const r of det) {
@@ -124,8 +164,9 @@ async function withRetry(fn, tries = 5) {
     rango_serie: { min: rows.reduce((m, r) => r.date < m ? r.date : m, '9999'),
                    max: rows.reduce((m, r) => r.date > m ? r.date : m, '0000') },
     rows, detalle,
+    ga4,  // tráfico del sitio (GA4) o null si no está configurado/falló
   };
   fs.writeFileSync(path.join(__dirname, 'data', 'tracking.json'), JSON.stringify(out));
   console.log(`OK · ${detalle.length} campañas · ${rows.length} filas de serie · ` +
-    `${new Set(detalle.map(d => d.plataforma)).size} plataformas`);
+    `${new Set(detalle.map(d => d.plataforma)).size} plataformas · GA4 ${ga4 ? ga4.rows.length + ' días' : 'sin datos'}`);
 })().catch(e => { console.error('FALLO refresh:', e.message); process.exit(1); });

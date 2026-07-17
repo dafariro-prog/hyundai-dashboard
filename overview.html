@@ -215,7 +215,17 @@ function render(){
   const reachMTD=sum(DATA.detalle.filter(r=>r.mes===mesA),'reach');
   const cpl=x=>x.leads?x.spend/x.leads:0;
 
-  renderKpis(M,C,P,cpl,reachMTD);
+  // Tráfico del sitio (GA4). Site-wide, no depende de cuenta. Fallback: clics.
+  const g4=(DATA.ga4&&DATA.ga4.rows&&DATA.ga4.rows.length)?DATA.ga4.rows:null;
+  const g4sum=(lo,hi)=> g4.filter(r=>r.date>=lo&&r.date<=hi).reduce((a,r)=>a+(r.sessions||0),0);
+  const traf = g4 ? {
+    ga4:true,
+    mtd:  g4.filter(r=>r.date.slice(0,7)===mesA).reduce((a,r)=>a+(r.sessions||0),0),
+    cur:  g4sum(last7lo,maxDate),
+    prev: g4sum(prev7lo,prev7hi),
+  } : { ga4:false, mtd:M.clicks, cur:C.clicks, prev:P.clicks };
+
+  renderKpis(M,C,P,cpl,reachMTD,traf);
   renderGoals(mesA,M,cpl(M));
   renderWow(C,P,cpl);
   renderLeadChart(mtdRows,mesA);
@@ -234,14 +244,16 @@ function deltaHTML(curV,prevV,betterUp=true){
   return `<span class="delta ${cls}">${arrow} ${Math.abs(ch*100).toFixed(1)}%</span>`;
 }
 
-function renderKpis(M,C,P,cpl,reachMTD){
+function renderKpis(M,C,P,cpl,reachMTD,traf){
   const cards=[
     {ico:'💵',label:'Inversión',      val:money0(M.spend),        d:deltaHTML(C.spend,P.spend,true),  note:'vs semana anterior'},
     {ico:'🎯',label:'Leads generados',val:HAS_OBJ()?fmt(M.leads):'—', d:HAS_OBJ()?deltaHTML(C.leads,P.leads,true):'', note:HAS_OBJ()?'vs semana anterior':'requiere refrescar datos'},
     {ico:'🏷️',label:'Costo por Lead', val:HAS_OBJ()&&M.leads?money(cpl(M)):'—', d:HAS_OBJ()&&P.leads?deltaHTML(cpl(C),cpl(P),false):'', note:'menor es mejor · vs sem. ant.'},
     {ico:'👁️',label:'Impresiones',    val:fmt(M.impressions),     d:deltaHTML(C.impressions,P.impressions,true), note:'vs semana anterior'},
     {ico:'📡',label:'Alcance',        val:fmt(reachMTD),          d:'<span class="delta flat">mensual</span>', note:'suma de alcance por campaña (MTD)'},
-    {ico:'🌐',label:'Tráfico (clics)',val:fmt(M.clicks),          d:deltaHTML(C.clicks,P.clicks,true), note:'proxy — GA4 pendiente de integrar'},
+    traf.ga4
+      ? {ico:'🌐',label:'Tráfico al sitio', val:fmt(traf.mtd), d:deltaHTML(traf.cur,traf.prev,true), note:'GA4 · sesiones · vs sem. ant.'}
+      : {ico:'🌐',label:'Tráfico (clics)',  val:fmt(traf.mtd), d:deltaHTML(traf.cur,traf.prev,true), note:'proxy — GA4 pendiente de integrar'},
   ];
   document.getElementById('kpis').innerHTML=cards.map(c=>`
     <div class="kpi">
