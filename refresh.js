@@ -109,7 +109,7 @@ async function fetchGA4() {
 
   // Cada reporte va aislado: si uno falla (métrica/dimensión no disponible en la
   // propiedad), devuelve [] y los demás siguen funcionando.
-  async function rep(dims, mets, { ranges = L30, limit = 100000, sortBy = null, byDate = false } = {}) {
+  async function rep(dims, mets, { ranges = FULL, limit = 100000, sortBy = null, byDate = false, byMonth = false } = {}) {
     try {
       const req = {
         property: prop, dateRanges: ranges,
@@ -122,11 +122,16 @@ async function fetchGA4() {
       const [r] = await client.runReport(req);
       return (r.rows || []).map(row => {
         const o = {};
+        const dv = row.dimensionValues.map(d => d.value);
         if (byDate) {
-          const d = row.dimensionValues[0].value;           // YYYYMMDD
+          const d = dv[0];                                   // YYYYMMDD
           o.date = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+        } else if (byMonth) {
+          const m = dv[0];                                   // YYYYMM
+          o.mes = `${m.slice(0,4)}-${m.slice(4,6)}`;
+          o.k = dv.slice(1).join(' / ') || '(no definido)';
         } else {
-          o.k = row.dimensionValues.map(d => d.value).join(' / ') || '(no definido)';
+          o.k = dv.join(' / ') || '(no definido)';
         }
         mets.forEach((m, i) => { o[m] = num(row.metricValues[i].value); });
         return o;
@@ -140,14 +145,15 @@ async function fetchGA4() {
   // Métricas aditivas (las tasas y promedios se calculan en el front)
   const CORE = ['sessions','totalUsers','newUsers','screenPageViews','engagedSessions','userEngagementDuration'];
 
+  // Los desgloses llevan yearMonth para poder filtrarlos por mes en el front.
   const [rows, canales, fuentes, dispositivos, ciudades, landing, paginas] = await Promise.all([
-    rep(['date'], CORE, { ranges: FULL, byDate: true }),
-    rep(['sessionDefaultChannelGroup'], ['sessions','totalUsers','engagedSessions','screenPageViews'], { sortBy:'sessions', limit:25 }),
-    rep(['sessionSourceMedium'], ['sessions','engagedSessions'], { sortBy:'sessions', limit:15 }),
-    rep(['deviceCategory'], ['sessions','totalUsers'], { sortBy:'sessions', limit:10 }),
-    rep(['city'], ['sessions'], { sortBy:'sessions', limit:12 }),
-    rep(['landingPage'], ['sessions','engagedSessions'], { sortBy:'sessions', limit:15 }),
-    rep(['pagePath'], ['screenPageViews','sessions'], { sortBy:'screenPageViews', limit:15 }),
+    rep(['date'], CORE, { byDate: true }),
+    rep(['yearMonth','sessionDefaultChannelGroup'], ['sessions','totalUsers','engagedSessions','screenPageViews'], { byMonth:true, sortBy:'sessions', limit:500 }),
+    rep(['yearMonth','sessionSourceMedium'], ['sessions','engagedSessions'], { byMonth:true, sortBy:'sessions', limit:1000 }),
+    rep(['yearMonth','deviceCategory'], ['sessions','totalUsers'], { byMonth:true, sortBy:'sessions', limit:200 }),
+    rep(['yearMonth','city'], ['sessions'], { byMonth:true, sortBy:'sessions', limit:1000 }),
+    rep(['yearMonth','landingPage'], ['sessions','engagedSessions'], { byMonth:true, sortBy:'sessions', limit:2000 }),
+    rep(['yearMonth','pagePath'], ['screenPageViews','sessions'], { byMonth:true, sortBy:'screenPageViews', limit:2000 }),
   ]);
 
   const daily = rows.filter(r => r.date >= SINCE);
@@ -156,7 +162,7 @@ async function fetchGA4() {
     `dispositivos ${dispositivos.length} · ciudades ${ciudades.length} · landings ${landing.length} · páginas ${paginas.length}`);
   return {
     property: GA4_PID, updated: new Date().toISOString(),
-    ventana_desgloses: 'últimos 30 días',
+    ventana_desgloses: 'filtrable por mes',
     rows: daily.map(r => ({
       date: r.date,
       sessions: r.sessions, users: r.totalUsers, newUsers: r.newUsers,

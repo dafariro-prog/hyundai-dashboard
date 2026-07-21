@@ -1,6 +1,7 @@
 {
-  "_nota": "Share of Search / indicadores de demanda de marca. Fuente: Juanma (actualización mensual). Agrega un objeto por mes a 'serie'. valor en la unidad indicada.",
+  "_nota": "Share of Search por marca. Fuente: equipo de marca (mensual). Agrega un objeto por mes a 'serie', con el % de cada marca en 'marcas'. Ej: {\"mes\":\"2026-06\",\"marcas\":{\"Hyundai\":32.5,\"Toyota\":28.1,\"Kia\":14.0}}",
   "unidad": "Share of Search (%)",
   "fuente": "Equipo de marca (mensual)",
+  "marca_principal": "Hyundai",
   "serie": []
 }

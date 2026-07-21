@@ -12,8 +12,7 @@
 <style>
   :root{
     --bg:#f5f5f5; --card:#ffffff; --line:#e4e4e4; --txt:#151515; --muted:#6e6e6e;
-    --accent:#002c5f;
-    --up:#15803d; --down:#b91c1c;
+    --accent:#002c5f; --up:#15803d; --down:#b91c1c;
     --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.06);
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -32,32 +31,42 @@
   .pill-dark{background:var(--accent);color:#fff;border-radius:22px;padding:8px 15px;font-weight:600;text-decoration:none}
   .pill-out{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 15px;font-weight:600;color:var(--txt);cursor:pointer}
 
-  .nav{display:flex;gap:8px;margin-bottom:14px}
+  .nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
   .nav a{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;box-shadow:var(--shadow)}
   .nav a.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-  .meta-line{font-size:11.5px;color:var(--muted);margin:0 6px 16px}
+  /* Filtros (como el mockup: AÑO / MES) */
+  .filters{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:16px;box-shadow:var(--shadow);
+    display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+  .fgroup{display:flex;flex-direction:column;gap:7px;min-width:170px}
+  .fgroup label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.7px}
+  .filters select{background:#fff;border:1.5px solid var(--line);color:var(--txt);padding:11px 13px;border-radius:12px;font-size:14px;outline:none;font-family:inherit;transition:.15s;cursor:pointer}
+  .filters select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,44,95,.14)}
+  .f-reset{background:#fff;border:1px solid var(--line);border-radius:22px;padding:9px 16px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+  .f-reset:hover{border-color:#c7ccdb;color:var(--txt)}
 
+  .meta-line{font-size:11.5px;color:var(--muted);margin:0 6px 16px}
   .sec-title{font-size:15px;font-weight:600;margin:22px 4px 14px;display:flex;align-items:center;gap:8px}
   .sec-title small{font-weight:500;color:var(--muted);font-size:12px}
 
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:6px}
-  .kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);position:relative}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
   .kpi .k-label{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px}
-  .kpi .k-ico{font-size:15px}
   .kpi .k-val{font-size:32px;font-weight:600;letter-spacing:-1px;line-height:1}
-  .kpi .k-val small{font-size:15px;font-weight:600;color:var(--muted);letter-spacing:0}
   .kpi .k-foot{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
   .delta{font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;font-size:11px}
   .delta.up{background:#dcfce7;color:var(--up)}
   .delta.down{background:#fee2e2;color:var(--down)}
   .delta.flat{background:#f1f3f7;color:#7b8499}
 
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
-  .card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  /* Grilla 2 columnas del mockup */
+  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);min-width:0}
+  .card h3{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
   .card h3 small{font-weight:500;color:var(--muted);font-size:11.5px}
-  canvas{max-height:280px}
+  .card .c-sub{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+  canvas{max-height:250px}
 
   .goal{margin-bottom:16px}
   .goal:last-child{margin-bottom:0}
@@ -68,23 +77,11 @@
   .goal .g-bar{height:10px;border-radius:6px;background:#eef1f7;overflow:hidden}
   .goal .g-bar i{display:block;height:100%;border-radius:6px;background:var(--accent);transition:width .4s}
   .goal .g-pct{font-size:11px;font-weight:600;margin-top:5px}
-  .empty{color:var(--muted);font-size:13px;padding:10px 2px;line-height:1.6}
+  .empty{color:var(--muted);font-size:13px;padding:14px 2px;line-height:1.6}
   .empty code{background:#f0f0f0;padding:1px 6px;border-radius:5px;font-size:12px}
-
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:10px 11px;text-align:right;border-bottom:1px solid var(--line)}
-  th:first-child,td:first-child{text-align:left}
-  th{color:var(--muted);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
-  td b{font-weight:600}
-  .plat-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
-
-  .marca-hero{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
-  .marca-hero .m-val{font-size:34px;font-weight:600;letter-spacing:-1px;color:var(--accent)}
-  .marca-hero .m-unit{font-size:13px;color:var(--muted);font-weight:600}
 
   .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
   #gate{padding:60px;text-align:center;color:var(--muted)}
-  @media(max-width:860px){.kpi .k-val{font-size:28px}}
 </style>
 </head>
 <body>
@@ -106,75 +103,63 @@
     <a href="index.html">📋 Detalle de campañas</a>
   </div>
 
+  <!-- Filtros -->
+  <div class="filters">
+    <div class="fgroup"><label for="fAnio">Año</label><select id="fAnio"></select></div>
+    <div class="fgroup"><label for="fMes">Mes</label><select id="fMes"></select></div>
+    <button class="f-reset" id="fReset">Limpiar filtros</button>
+  </div>
+
   <div class="meta-line" id="meta">—</div>
 
   <div class="sec-title">⭐ KPIs del mes <small id="mesLbl"></small></div>
   <div class="kpis" id="kpis"></div>
-  <div class="meta-line" style="margin-top:8px" id="kpiNote"></div>
 
-  <div class="sec-title">🎯 Cumplimiento de metas <small>· mes en curso (MTD) vs meta establecida</small></div>
-  <div class="cards">
-    <div class="card" id="goalsCard"><h3>Metas del mes</h3><div id="goals"></div></div>
-    <div class="card">
-      <h3>Comparativo semanal <small>· últimos 7 días vs 7 previos</small></h3>
-      <div style="overflow-x:auto"><table id="wowTbl">
-        <thead><tr><th>Métrica</th><th>Sem. actual</th><th>Sem. anterior</th><th>Δ</th></tr></thead>
-        <tbody></tbody></table></div>
-    </div>
-  </div>
-
-  <div class="sec-title">📅 Acumulado del mes (MTD) <small>· mes en curso vs mismo periodo del mes anterior</small></div>
-  <div class="cards">
-    <div class="card">
-      <h3>MTD vs mes anterior <small id="momLbl"></small></h3>
-      <div style="overflow-x:auto"><table id="momTbl">
-        <thead><tr><th>Métrica</th><th>Este mes</th><th>Mes anterior*</th><th>Δ</th></tr></thead>
-        <tbody></tbody></table></div>
-      <div class="meta-line" style="margin:8px 2px 0">* mismo rango de días (del 1 al día en curso) del mes anterior, para una comparación justa.</div>
-    </div>
-    <div class="card"><h3>Tendencia mensual <small>· inversión y leads por mes</small></h3><canvas id="monthChart"></canvas></div>
-  </div>
-
-  <div class="sec-title">📈 Evolución del mes</div>
-  <div class="cards">
-    <div class="card"><h3>Leads y CPL por día <small>· mes en curso</small></h3><canvas id="leadChart"></canvas></div>
-    <div class="card"><h3>Leads e inversión por plataforma <small>· MTD</small></h3>
-      <div style="overflow-x:auto"><table id="platTbl">
-        <thead><tr><th>Plataforma</th><th>Inversión</th><th>Leads</th><th>CPL</th></tr></thead>
-        <tbody></tbody></table></div>
-    </div>
-  </div>
-
-  <div class="sec-title">🔎 Demanda de marca <small>· Share of Search — actualización mensual</small></div>
-  <div class="cards">
-    <div class="card" style="grid-column:1/-1"><h3 id="marcaTitle">Share of Search</h3><div id="marca"></div></div>
+  <!-- Grilla 2 columnas, según el mockup -->
+  <div class="sec-title">📈 Evolución</div>
+  <div class="grid2">
+    <div class="card"><h3>Inversión <small>· semanal</small></h3><div class="c-sub">Inversión publicitaria por semana</div><canvas id="chInv"></canvas></div>
+    <div class="card"><h3>Impresiones <small>· semanal</small></h3><div class="c-sub">Impresiones por semana</div><canvas id="chImp"></canvas></div>
+    <div class="card"><h3>Leads generados <small>· semanal</small></h3><div class="c-sub">Leads por semana</div><canvas id="chLeads"></canvas></div>
+    <div class="card"><h3>Costo por lead <small>· semanal</small></h3><div class="c-sub">CPL por semana</div><canvas id="chCpl"></canvas></div>
+    <div class="card"><h3>Tráfico web <small>· semanal</small></h3><div class="c-sub">Sesiones del sitio por semana (GA4)</div><canvas id="chTraf"></canvas></div>
+    <div class="card"><h3>Alcance <small>· mensual</small></h3><div class="c-sub">Alcance de campañas por mes</div><canvas id="chReach"></canvas></div>
+    <div class="card"><h3>Share of search by brands <small id="sosMes"></small></h3><div class="c-sub">Demanda de marca — actualización mensual</div><div id="sosBox"><canvas id="chSos"></canvas></div></div>
+    <div class="card"><h3>Cumplimiento de metas <small>· periodo seleccionado</small></h3><div class="c-sub">Resultados vs meta establecida</div><div id="goals"></div></div>
   </div>
 
   <div class="foot" id="foot"></div>
 </div>
 
 <script>
-const PLAT_HEX = {'Meta':'#1877f2','Google Ads':'#ea4335','DV360':'#f9ab00','TikTok':'#111111'};
-const LEAD_OBJ = new Set(['Clientes potenciales']); // definición de "Lead" acordada con el cliente
+const LEAD_OBJ=new Set(['Clientes potenciales']);
 const MES_NOMBRES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+const COL={inv:'#002c5f',imp:'#3A75EB',leads:'#1DCB78',cpl:'#EB3B38',traf:'#F6993E',reach:'#BD8AF2'};
+const SOS_PAL=['#002c5f','#7b8499','#c7ccdb','#9aa3b2','#5b6b82','#aab4c4','#dfe4ec'];
 
 const fmt=n=>new Intl.NumberFormat('es').format(Math.round(n||0));
 const fmt2=n=>new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
 const money=n=>'$'+fmt2(n);
 const money0=n=>'$'+fmt(n);
-// Formato de eje monetario adaptado al rango visible: evita repetir "$1,$1,$0…"
-// cuando se apaga una serie en la leyenda y el eje colapsa a 0-1.
+const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+function mesLargo(m){return (MES_NOMBRES[m.slice(5,7)]||m)+' '+m.slice(0,4);}
+// Formato de eje monetario adaptado al rango visible (evita "$1,$1,$0…")
 function moneyTick(v,i,ticks){
   const max=Math.max(...(ticks||[]).map(t=>Math.abs(t.value)),Math.abs(v));
   if(max>=1000) return '$'+fmt(v);
   if(max>=10)   return '$'+Math.round(v);
   return '$'+(+v).toFixed(2);
 }
-const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
-function addDays(dstr,n){const d=new Date(dstr+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-function mesLargo(m){return (MES_NOMBRES[m.slice(5,7)]||m)+' '+m.slice(0,4);}
+// Lunes de la semana de una fecha
+function weekStart(d){const x=new Date(d+'T00:00:00');const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);return x.toISOString().slice(0,10);}
+const weekLbl=w=>w.slice(8)+'/'+w.slice(5,7);
 
-let DATA={rows:[],detalle:[]}, METAS={}, MARCA={serie:[]}, leadChart, monthChart;
+let DATA={rows:[],detalle:[]}, METAS={}, MARCA={serie:[]}, CH={};
+const S=(a,k)=>a.reduce((x,r)=>x+(r[k]||0),0);
+const HAS_OBJ=()=>DATA.rows.length && ('objetivo' in DATA.rows[0]);
+const leadsOf=a=>a.reduce((x,r)=>x+(LEAD_OBJ.has(r.objetivo)?(r.conversions||0):0),0);
+const V=id=>document.getElementById(id).value;
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -183,11 +168,13 @@ async function boot(){
   const {data:perm}=await sb.from('permisos').select('*').eq('email',email).maybeSingle();
   if(!perm){
     document.getElementById('gate').innerHTML='<div style="max-width:520px;margin:0 auto"><h2>Sin acceso</h2>'+
-      '<p style="margin-top:10px">Tu correo <b>'+esc(email)+'</b> no está autorizado. Pide a un administrador que te agregue.</p>'+
-      '<p style="margin-top:16px"><a href="#" onclick="sb.auth.signOut().then(()=>location.replace(\'login.html\'));return false">Cerrar sesión</a></p></div>';
+      '<p style="margin-top:10px">Tu correo <b>'+esc(email)+'</b> no está autorizado.</p></div>';
     return;
   }
-  renderUserBox(email,perm);
+  document.getElementById('userBox').innerHTML=
+    `<span class="pill-user">👤 ${esc(email)}</span>`+
+    (perm.rol==='admin'?`<a class="pill-dark" href="admin.html">⚙️ Admin</a>`:'')+
+    `<button class="pill-out" onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
   const d=await (await fetch('data/tracking.json')).json();
   applyScope(d,perm);
   DATA=d;
@@ -196,7 +183,7 @@ async function boot(){
   if(!DATA.detalle.length){ document.getElementById('gate').textContent='No hay datos disponibles para tu acceso.'; return; }
   document.getElementById('gate').style.display='none';
   document.getElementById('app').style.display='block';
-  render();
+  buildFilters(); render();
 }
 function applyScope(d,perm){
   if(perm.rol==='admin') return;
@@ -205,232 +192,194 @@ function applyScope(d,perm){
   const ok=r=> (!ags.length||ags.includes(r.agencia)) && (!cts.length||cts.includes(r.account_name));
   d.detalle=d.detalle.filter(ok); d.rows=d.rows.filter(ok);
 }
-function renderUserBox(email,perm){
-  document.getElementById('userBox').innerHTML=
-    `<span class="pill-user">👤 ${esc(email)}</span>`+
-    (perm.rol==='admin'?`<a class="pill-dark" href="admin.html">⚙️ Admin</a>`:'')+
-    `<button class="pill-out" onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
+
+function buildFilters(){
+  const meses=[...new Set(DATA.rows.map(r=>r.date.slice(0,7)))].sort();
+  const anios=[...new Set(meses.map(m=>m.slice(0,4)))].sort();
+  const ult=meses[meses.length-1]||'';
+  document.getElementById('fAnio').innerHTML='<option value="">Todos</option>'+anios.map(y=>`<option>${y}</option>`).join('');
+  const mm=[...new Set(meses.map(m=>m.slice(5,7)))].sort();
+  document.getElementById('fMes').innerHTML='<option value="">Todos</option>'+mm.map(m=>`<option value="${m}">${MES_NOMBRES[m]}</option>`).join('');
+  // Por defecto: el mes más reciente con datos
+  document.getElementById('fAnio').value=ult.slice(0,4);
+  document.getElementById('fMes').value=ult.slice(5,7);
+  document.getElementById('fAnio').onchange=render;
+  document.getElementById('fMes').onchange=render;
+  document.getElementById('fReset').onclick=()=>{document.getElementById('fAnio').value='';document.getElementById('fMes').value='';render();};
 }
 
-const HAS_OBJ=()=>DATA.rows.length && ('objetivo' in DATA.rows[0]);
-const sum=(a,k)=>a.reduce((s,r)=>s+(r[k]||0),0);
-const leadsOf=arr=> HAS_OBJ() ? arr.reduce((s,r)=>s+(LEAD_OBJ.has(r.objetivo)?(r.conversions||0):0),0) : 0;
+// Filtro de periodo aplicado a cualquier lista con .date o .mes
+const inPeriod=(m)=>{const y=V('fAnio'),mo=V('fMes');return (!y||m.slice(0,4)===y)&&(!mo||m.slice(5,7)===mo);};
+const fRows   =()=>DATA.rows.filter(r=>inPeriod(r.date.slice(0,7)));
+const fDetalle=()=>(DATA.detalle||[]).filter(r=>!r.mes||inPeriod(r.mes));
+const fGa4    =()=>((DATA.ga4&&DATA.ga4.rows)||[]).filter(r=>inPeriod(r.date.slice(0,7)));
 
 function render(){
-  const maxDate=DATA.rows.reduce((m,r)=>r.date>m?r.date:m,'0000-00-00');
-  const minDate=DATA.rows.reduce((m,r)=>r.date<m?r.date:m,'9999-99-99');
-  const mesA=maxDate.slice(0,7);
-  document.getElementById('mesLbl').textContent='· '+mesLargo(mesA)+' (al '+maxDate.split('-').reverse().join('/')+')';
+  const rows=fRows(), det=fDetalle(), ga4=fGa4();
+  const maxD=rows.reduce((m,r)=>r.date>m?r.date:m,'0000-00-00');
+  const minD=rows.reduce((m,r)=>r.date<m?r.date:m,'9999-99-99');
+  const y=V('fAnio'), mo=V('fMes');
+  const etiqueta = (y&&mo)?mesLargo(y+'-'+mo) : (y?('Año '+y) : (mo?MES_NOMBRES[mo]:'Todo el periodo'));
+  document.getElementById('mesLbl').textContent='· '+etiqueta+(rows.length?' (al '+maxD.split('-').reverse().join('/')+')':'');
   document.getElementById('meta').textContent=
-    `Cliente Hyundai · Petroautos, Panamá · datos ${minDate.split('-').reverse().join('/')} → ${maxDate.split('-').reverse().join('/')} · actualizado ${new Date(DATA.updated).toLocaleString('es')}`;
+    `Hyundai · Petroautos, Panamá · ${rows.length?minD.split('-').reverse().join('/')+' → '+maxD.split('-').reverse().join('/'):'sin datos en el periodo'} · actualizado ${new Date(DATA.updated).toLocaleString('es')}`;
 
-  // Ventanas
-  const mtdRows=DATA.rows.filter(r=>r.date.slice(0,7)===mesA);
-  const last7lo=addDays(maxDate,-6), prev7lo=addDays(maxDate,-13), prev7hi=addDays(maxDate,-7);
-  const cur=DATA.rows.filter(r=>r.date>=last7lo && r.date<=maxDate);
-  const prev=DATA.rows.filter(r=>r.date>=prev7lo && r.date<=prev7hi);
+  if(!rows.length){
+    document.getElementById('kpis').innerHTML='<div class="empty" style="grid-column:1/-1">No hay datos para el periodo seleccionado.</div>';
+    Object.values(CH).forEach(c=>c&&c.destroy()); CH={};
+    return;
+  }
 
-  const agg=arr=>({spend:sum(arr,'spend'),impressions:sum(arr,'impressions'),clicks:sum(arr,'clicks'),leads:leadsOf(arr)});
-  const M=agg(mtdRows), C=agg(cur), P=agg(prev);
-  // Alcance del mes (mensual, desde detalle agregado por campaña)
-  const reachMTD=sum(DATA.detalle.filter(r=>r.mes===mesA),'reach');
-  const cpl=x=>x.leads?x.spend/x.leads:0;
-
-  // Tráfico del sitio (GA4). Site-wide, no depende de cuenta. Fallback: clics.
-  const g4=(DATA.ga4&&DATA.ga4.rows&&DATA.ga4.rows.length)?DATA.ga4.rows:null;
-  const g4sum=(lo,hi)=> g4.filter(r=>r.date>=lo&&r.date<=hi).reduce((a,r)=>a+(r.sessions||0),0);
-  const traf = g4 ? {
-    ga4:true,
-    mtd:  g4.filter(r=>r.date.slice(0,7)===mesA).reduce((a,r)=>a+(r.sessions||0),0),
-    cur:  g4sum(last7lo,maxDate),
-    prev: g4sum(prev7lo,prev7hi),
-  } : { ga4:false, mtd:M.clicks, cur:C.clicks, prev:P.clicks };
-
-  renderKpis(M,C,P,cpl,reachMTD,traf);
-  renderGoals(mesA,M,cpl(M));
-  renderWow(C,P,cpl);
-  renderMonthly(mesA,maxDate);
-  renderLeadChart(mtdRows,mesA);
-  renderPlatTable(mtdRows);
-  renderMarca();
-  document.getElementById('foot').textContent='Fuente: vw_marketing_daily_campaign (BigQuery) · Lead = conversiones de campañas "Clientes potenciales" · gasto en USD';
+  renderKpis(rows,det,ga4,maxD);
+  // Series semanales
+  const wInv  =byWeek(rows,r=>r.spend);
+  const wImp  =byWeek(rows,r=>r.impressions);
+  const wLead =byWeek(rows,r=>LEAD_OBJ.has(r.objetivo)?(r.conversions||0):0);
+  const wTraf =byWeek(ga4,r=>r.sessions);
+  bar('chInv','inv',wInv,COL.inv,v=>money0(v),true);
+  bar('chImp','imp',wImp,COL.imp,v=>fmt(v));
+  bar('chLeads','leads',wLead,COL.leads,v=>fmt(v));
+  cplChart(wInv,wLead);
+  bar('chTraf','traf',wTraf,COL.traf,v=>fmt(v));
+  reachChart(det);
+  renderSos();
+  renderGoals(rows,det);
+  document.getElementById('foot').textContent='Fuente: BigQuery (pauta) + Google Analytics 4 (tráfico) · Lead = conversiones de campañas "Clientes potenciales" · gasto en USD';
 }
 
-// delta HTML; betterUp=true -> subir es bueno (verde); para CPL betterUp=false
-function deltaHTML(curV,prevV,betterUp=true){
-  if(!prevV){ return `<span class="delta flat">nuevo</span>`; }
-  const ch=(curV-prevV)/prevV;
-  const good = betterUp ? ch>=0 : ch<=0;
-  const cls = Math.abs(ch)<0.005 ? 'flat' : (good?'up':'down');
-  const arrow = ch>0.005?'▲':(ch<-0.005?'▼':'▬');
-  return `<span class="delta ${cls}">${arrow} ${Math.abs(ch*100).toFixed(1)}%</span>`;
+// Agrupa por semana (lunes) y devuelve {labels, keys, vals}
+function byWeek(arr,val){
+  const m={};
+  arr.forEach(r=>{const w=weekStart(r.date); m[w]=(m[w]||0)+(val(r)||0);});
+  const keys=Object.keys(m).sort();
+  return {keys, labels:keys.map(weekLbl), vals:keys.map(k=>m[k])};
 }
 
-function renderKpis(M,C,P,cpl,reachMTD,traf){
+function deltaHTML(c,p,betterUp=true){
+  if(!p) return '<span class="delta flat">—</span>';
+  const ch=(c-p)/p, good=betterUp?ch>=0:ch<=0;
+  const cls=Math.abs(ch)<0.005?'flat':(good?'up':'down');
+  const ar=ch>0.005?'▲':(ch<-0.005?'▼':'▬');
+  return `<span class="delta ${cls}">${ar} ${Math.abs(ch*100).toFixed(1)}%</span>`;
+}
+
+function renderKpis(rows,det,ga4,maxD){
+  const cur=rows.filter(r=>r.date>=addDays(maxD,-6)&&r.date<=maxD);
+  const prv=rows.filter(r=>r.date>=addDays(maxD,-13)&&r.date<=addDays(maxD,-7));
+  const gcur=ga4.filter(r=>r.date>=addDays(maxD,-6)&&r.date<=maxD);
+  const gprv=ga4.filter(r=>r.date>=addDays(maxD,-13)&&r.date<=addDays(maxD,-7));
+  const L=leadsOf(rows), Lc=leadsOf(cur), Lp=leadsOf(prv);
+  const cpl=(sp,l)=>l?sp/l:0;
+  const hasGa4=ga4.length>0;
   const cards=[
-    {ico:'💵',label:'Inversión',      val:money0(M.spend),        d:deltaHTML(C.spend,P.spend,true),  note:'vs semana anterior'},
-    {ico:'🎯',label:'Leads generados',val:HAS_OBJ()?fmt(M.leads):'—', d:HAS_OBJ()?deltaHTML(C.leads,P.leads,true):'', note:HAS_OBJ()?'vs semana anterior':'requiere refrescar datos'},
-    {ico:'🏷️',label:'Costo por Lead', val:HAS_OBJ()&&M.leads?money(cpl(M)):'—', d:HAS_OBJ()&&P.leads?deltaHTML(cpl(C),cpl(P),false):'', note:'menor es mejor · vs sem. ant.'},
-    {ico:'👁️',label:'Impresiones',    val:fmt(M.impressions),     d:deltaHTML(C.impressions,P.impressions,true), note:'vs semana anterior'},
-    {ico:'📡',label:'Alcance',        val:fmt(reachMTD),          d:'<span class="delta flat">mensual</span>', note:'suma de alcance por campaña (MTD)'},
-    traf.ga4
-      ? {ico:'🌐',label:'Tráfico al sitio', val:fmt(traf.mtd), d:deltaHTML(traf.cur,traf.prev,true), note:'GA4 · sesiones · vs sem. ant.'}
-      : {ico:'🌐',label:'Tráfico (clics)',  val:fmt(traf.mtd), d:deltaHTML(traf.cur,traf.prev,true), note:'proxy — GA4 pendiente de integrar'},
+    {ico:'💵',label:'Inversión',        val:money0(S(rows,'spend')), d:deltaHTML(S(cur,'spend'),S(prv,'spend')), n:'vs semana anterior'},
+    {ico:'🎯',label:'Leads generados',  val:HAS_OBJ()?fmt(L):'—',    d:HAS_OBJ()?deltaHTML(Lc,Lp):'',           n:'vs semana anterior'},
+    {ico:'🏷️',label:'Costo por Lead',   val:L?money(cpl(S(rows,'spend'),L)):'—', d:Lp?deltaHTML(cpl(S(cur,'spend'),Lc),cpl(S(prv,'spend'),Lp),false):'', n:'menor es mejor · vs sem. ant.'},
+    {ico:'👁️',label:'Impresiones',      val:fmt(S(rows,'impressions')), d:deltaHTML(S(cur,'impressions'),S(prv,'impressions')), n:'vs semana anterior'},
+    {ico:'📡',label:'Alcance',          val:fmt(S(det,'reach')),     d:'<span class="delta flat">mensual</span>', n:'suma de alcance por campaña'},
+    hasGa4
+      ? {ico:'🌐',label:'Tráfico web',  val:fmt(S(ga4,'sessions')),  d:deltaHTML(S(gcur,'sessions'),S(gprv,'sessions')), n:'GA4 · sesiones · vs sem. ant.'}
+      : {ico:'🌐',label:'Tráfico (clics)', val:fmt(S(rows,'clicks')), d:deltaHTML(S(cur,'clicks'),S(prv,'clicks')), n:'proxy — sin datos GA4 en el periodo'},
   ];
   document.getElementById('kpis').innerHTML=cards.map(c=>`
     <div class="kpi">
-      <div class="k-label"><span class="k-ico">${c.ico}</span>${c.label}</div>
+      <div class="k-label"><span>${c.ico}</span>${c.label}</div>
       <div class="k-val">${c.val}</div>
-      <div class="k-foot">${c.d||''}<span>${c.note}</span></div>
+      <div class="k-foot">${c.d||''}<span>${c.n}</span></div>
     </div>`).join('');
-  document.getElementById('kpiNote').innerHTML = HAS_OBJ()?'' :
-    '⚠️ Los KPIs de Leads/CPL a nivel diario y su comparativo semanal requieren volver a correr el workflow de refresco (para incluir el objetivo en la serie). Mientras tanto se muestran solo los totales del mes disponibles.';
 }
 
-function renderGoals(mesA,M,cplM){
-  const g=METAS[mesA]||{};
-  const box=document.getElementById('goals');
-  const rows=[
-    {name:'Inversión',    real:M.spend, meta:g.inversion, fmt:money0, betterUp:true},
-    {name:'Leads',        real:M.leads, meta:g.leads,     fmt:fmt,    betterUp:true, hide:!HAS_OBJ()},
-    {name:'Costo por Lead',real:cplM,   meta:g.cpl,       fmt:money,  betterUp:false, hide:!HAS_OBJ()},
-  ].filter(r=>!r.hide);
-  const anyMeta=rows.some(r=>r.meta!=null && r.meta>0);
-  if(!anyMeta){
-    box.innerHTML='<div class="empty">Aún no hay metas cargadas para '+mesLargo(mesA)+'.<br>'+
-      'Define los objetivos del mes en <code>data/metas.json</code> (inversión, leads y CPL objetivo) y aparecerán aquí como barras de cumplimiento.</div>';
+function baseOpts(fmtFn,money=false){
+  return {responsive:true,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>' '+fmtFn(c.parsed.y)}}},
+    scales:{x:{ticks:{color:'#7b8499',maxTicksLimit:12},grid:{display:false}},
+      y:{beginAtZero:true,ticks:{color:'#7b8499',callback:money?moneyTick:(v=>fmt(v))},grid:{color:'#eef1f7'}}}};
+}
+function bar(canvasId,key,series,color,fmtFn,money=false){
+  CH[key]&&CH[key].destroy();
+  const el=document.getElementById(canvasId); if(!el) return;
+  if(!series.keys.length){ CH[key]=null; el.parentNode.querySelector('.c-sub').insertAdjacentHTML('afterend',''); return; }
+  CH[key]=new Chart(el,{type:'bar',
+    data:{labels:series.labels,datasets:[{data:series.vals,backgroundColor:color+'55',borderColor:color,borderWidth:1.5,borderRadius:4}]},
+    options:baseOpts(fmtFn,money)});
+}
+function cplChart(wInv,wLead){
+  CH.cpl&&CH.cpl.destroy();
+  const keys=wInv.keys;
+  const vals=keys.map((k,i)=>{const l=wLead.vals[wLead.keys.indexOf(k)]||0;return l?wInv.vals[i]/l:0;});
+  CH.cpl=new Chart(document.getElementById('chCpl'),{type:'line',
+    data:{labels:wInv.labels,datasets:[{data:vals,borderColor:COL.cpl,backgroundColor:COL.cpl+'22',fill:true,tension:.35,pointRadius:3,borderWidth:2.5}]},
+    options:baseOpts(v=>money(v),true)});
+}
+function reachChart(det){
+  CH.reach&&CH.reach.destroy();
+  const m={}; det.forEach(r=>{ if(r.mes) m[r.mes]=(m[r.mes]||0)+(r.reach||0); });
+  const keys=Object.keys(m).sort();
+  CH.reach=new Chart(document.getElementById('chReach'),{type:'bar',
+    data:{labels:keys.map(k=>(MES_NOMBRES[k.slice(5,7)]||k).slice(0,3)),
+      datasets:[{data:keys.map(k=>m[k]),backgroundColor:COL.reach+'55',borderColor:COL.reach,borderWidth:1.5,borderRadius:4}]},
+    options:baseOpts(v=>fmt(v))});
+}
+
+function renderSos(){
+  const box=document.getElementById('sosBox'), lbl=document.getElementById('sosMes');
+  const serie=(MARCA.serie||[]).slice().sort((a,b)=>a.mes.localeCompare(b.mes));
+  const y=V('fAnio'), mo=V('fMes');
+  const elegido = serie.filter(s=>(!y||s.mes.slice(0,4)===y)&&(!mo||s.mes.slice(5,7)===mo));
+  const punto = elegido.length?elegido[elegido.length-1]:(serie.length?serie[serie.length-1]:null);
+  CH.sos&&CH.sos.destroy(); CH.sos=null;
+  if(!punto||!punto.marcas||!Object.keys(punto.marcas).length){
+    lbl.textContent='';
+    box.innerHTML='<div class="empty">Pendiente de carga mensual.<br>El equipo de marca entrega el Share of Search una vez al mes. '+
+      'Cárgalo en <code>data/marca.json</code> como <code>{"mes":"2026-06","marcas":{"Hyundai":32.5,"Toyota":28.1}}</code> y aquí se graficará por marca.</div>';
     return;
   }
-  box.innerHTML=rows.map(r=>{
-    if(r.meta==null||r.meta<=0) return `<div class="goal"><div class="g-top"><span class="g-name">${r.name}</span><span class="g-val">meta no definida</span></div><div class="g-bar"><i style="width:0%"></i></div></div>`;
-    let pct, txt, col;
-    if(r.betterUp){ pct=r.real/r.meta*100; col=pct>=100?'var(--up)':(pct>=70?'var(--accent)':'#b45309'); txt=pct.toFixed(0)+'% de la meta'; }
-    else { // CPL: cumplir = estar por debajo de la meta
-      pct=r.meta?r.real/r.meta*100:0; const cumple=r.real<=r.meta; col=cumple?'var(--up)':'var(--down)';
-      txt=cumple?('✔ '+ (100-pct>0?(100-(r.real/r.meta*100)).toFixed(0):'0') +'% bajo la meta'):('⚠ '+((r.real/r.meta-1)*100).toFixed(0)+'% sobre la meta');
-    }
-    const barPct=Math.max(0,Math.min(100,r.betterUp?pct:(100-Math.min(pct,200)/2)));
+  lbl.textContent='· '+mesLargo(punto.mes);
+  box.innerHTML='<canvas id="chSos"></canvas>';
+  const ent=Object.entries(punto.marcas).sort((a,b)=>b[1]-a[1]);
+  const principal=(MARCA.marca_principal||'Hyundai').toLowerCase();
+  CH.sos=new Chart(document.getElementById('chSos'),{type:'bar',
+    data:{labels:ent.map(e=>e[0]),datasets:[{data:ent.map(e=>e[1]),
+      backgroundColor:ent.map((e,i)=>e[0].toLowerCase()===principal?COL.inv:SOS_PAL[(i+1)%SOS_PAL.length]),borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt2(c.parsed.y)+'%'}}},
+      scales:{x:{ticks:{color:'#7b8499'},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{color:'#7b8499',callback:v=>v+'%'},grid:{color:'#eef1f7'}}}}});
+}
+
+function renderGoals(rows,det){
+  const y=V('fAnio'), mo=V('fMes');
+  const mesKey=(y&&mo)?`${y}-${mo}`:null;
+  const g=(mesKey&&METAS[mesKey])?METAS[mesKey]:{};
+  const box=document.getElementById('goals');
+  const spend=S(rows,'spend'), leads=leadsOf(rows), cpl=leads?spend/leads:0;
+  const items=[
+    {name:'Inversión', real:spend, meta:g.inversion, fmt:money0, up:true},
+    {name:'Leads',     real:leads, meta:g.leads,     fmt:fmt,    up:true},
+    {name:'Costo por Lead', real:cpl, meta:g.cpl,    fmt:money,  up:false},
+  ];
+  if(!mesKey){
+    box.innerHTML='<div class="empty">Selecciona un <b>año y mes</b> concretos para comparar contra la meta de ese mes.</div>';
+    return;
+  }
+  if(!items.some(i=>i.meta!=null&&i.meta>0)){
+    box.innerHTML='<div class="empty">Aún no hay metas cargadas para '+mesLargo(mesKey)+'.<br>'+
+      'Defínelas en <code>data/metas.json</code> (inversión, leads y CPL objetivo) y aparecerán como barras de cumplimiento.</div>';
+    return;
+  }
+  box.innerHTML=items.map(r=>{
+    if(r.meta==null||r.meta<=0)
+      return `<div class="goal"><div class="g-top"><span class="g-name">${r.name}</span><span class="g-val">meta no definida</span></div><div class="g-bar"><i style="width:0%"></i></div></div>`;
+    let pct,txt,col;
+    if(r.up){ pct=r.real/r.meta*100; col=pct>=100?'var(--up)':(pct>=70?'var(--accent)':'#b45309'); txt=pct.toFixed(0)+'% de la meta'; }
+    else { const cumple=r.real<=r.meta; pct=r.meta?r.real/r.meta*100:0; col=cumple?'var(--up)':'var(--down)';
+      txt=cumple?('✔ '+(100-pct).toFixed(0)+'% bajo la meta'):('⚠ '+(pct-100).toFixed(0)+'% sobre la meta'); }
+    const barPct=Math.max(0,Math.min(100,r.up?pct:Math.max(0,200-pct)/2));
     return `<div class="goal">
-      <div class="g-top"><span class="g-name">${r.name}</span>
-        <span class="g-val"><b>${r.fmt(r.real)}</b> / meta ${r.fmt(r.meta)}</span></div>
+      <div class="g-top"><span class="g-name">${r.name}</span><span class="g-val"><b>${r.fmt(r.real)}</b> / meta ${r.fmt(r.meta)}</span></div>
       <div class="g-bar"><i style="width:${barPct}%;background:${col}"></i></div>
       <div class="g-pct" style="color:${col}">${txt}</div>
     </div>`;
   }).join('');
-}
-
-function renderWow(C,P,cpl){
-  const rows=[
-    {name:'Inversión',    c:C.spend, p:P.spend, fmt:money0, up:true},
-    {name:'Leads',        c:C.leads, p:P.leads, fmt:fmt,    up:true, hide:!HAS_OBJ()},
-    {name:'Costo por Lead',c:cpl(C), p:cpl(P), fmt:money,   up:false, hide:!HAS_OBJ()},
-    {name:'Impresiones',  c:C.impressions, p:P.impressions, fmt:fmt, up:true},
-    {name:'Tráfico (clics)',c:C.clicks, p:P.clicks, fmt:fmt, up:true},
-  ].filter(r=>!r.hide);
-  document.querySelector('#wowTbl tbody').innerHTML=rows.map(r=>`
-    <tr><td>${r.name}</td><td><b>${r.fmt(r.c)}</b></td><td>${r.fmt(r.p)}</td>
-      <td>${deltaHTML(r.c,r.p,r.up)}</td></tr>`).join('');
-}
-
-function renderMonthly(mesA,maxDate){
-  const dayN=+maxDate.slice(8,10);
-  const [y,mo]=mesA.split('-').map(Number);
-  const pd=new Date(y,mo-2,1);           // primer día del mes anterior
-  const prevMes=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0');
-  const curR=DATA.rows.filter(r=>r.date.slice(0,7)===mesA);                       // MTD (hasta el día en curso)
-  const prevR=DATA.rows.filter(r=>r.date.slice(0,7)===prevMes && +r.date.slice(8,10)<=dayN); // mismo rango de días
-  const agg=a=>({spend:sum(a,'spend'),leads:leadsOf(a),impressions:sum(a,'impressions'),clicks:sum(a,'clicks')});
-  const A=agg(curR), B=agg(prevR);
-  const cpl=x=>x.leads?x.spend/x.leads:0;
-  document.getElementById('momLbl').textContent='· al día '+dayN;
-  const rows=[
-    {name:'Inversión',    c:A.spend, p:B.spend, fmt:money0, up:true},
-    {name:'Leads',        c:A.leads, p:B.leads, fmt:fmt,    up:true, hide:!HAS_OBJ()},
-    {name:'Costo por Lead',c:cpl(A), p:cpl(B), fmt:money,   up:false, hide:!HAS_OBJ()},
-    {name:'Impresiones',  c:A.impressions, p:B.impressions, fmt:fmt, up:true},
-    {name:'Tráfico (clics)',c:A.clicks, p:B.clicks, fmt:fmt, up:true},
-  ].filter(r=>!r.hide);
-  document.querySelector('#momTbl tbody').innerHTML=rows.map(r=>`
-    <tr><td>${r.name}</td><td><b>${r.fmt(r.c)}</b></td><td>${r.fmt(r.p)}</td>
-      <td>${r.p?deltaHTML(r.c,r.p,r.up):'<span class="delta flat">nuevo</span>'}</td></tr>`).join('');
-
-  // Tendencia mensual (todos los meses con data)
-  const byM={};
-  DATA.rows.forEach(r=>{const m=r.date.slice(0,7); const g=byM[m]||(byM[m]={spend:0,leads:0});
-    g.spend+=r.spend||0; if(HAS_OBJ()&&LEAD_OBJ.has(r.objetivo)) g.leads+=r.conversions||0;});
-  const meses=Object.keys(byM).sort();
-  const lbl=meses.map(m=>(MES_NOMBRES[m.slice(5,7)]||m).slice(0,3));
-  const spend=meses.map(m=>byM[m].spend), leads=meses.map(m=>byM[m].leads);
-  const curIdx=meses.indexOf(mesA);
-  monthChart&&monthChart.destroy();
-  monthChart=new Chart(document.getElementById('monthChart'),{
-    data:{labels:lbl,datasets:[
-      {type:'bar',label:'Inversión',data:spend,yAxisID:'y',order:2,borderRadius:4,
-        backgroundColor:meses.map((m,i)=>i===curIdx?'#002c5f':'#002c5f55')},
-      {type:'line',label:'Leads',data:leads,yAxisID:'y1',order:1,borderColor:'#ea4335',backgroundColor:'#ea4335',tension:.35,pointRadius:3,borderWidth:2.5}
-    ]},
-    options:{responsive:true,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#7b8499',usePointStyle:true,boxWidth:8,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` Leads: ${fmt(c.parsed.y)}`:` Inversión: ${money0(c.parsed.y)}`}}},
-      scales:{x:{ticks:{color:'#7b8499'},grid:{display:false}},
-        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499',callback:moneyTick},grid:{color:'#eef1f7'}},
-        y1:{position:'right',beginAtZero:true,ticks:{color:'#ea4335'},grid:{display:false}}}}});
-}
-
-function renderLeadChart(mtdRows,mesA){
-  const byDate={};
-  mtdRows.forEach(r=>{const d=byDate[r.date]||(byDate[r.date]={spend:0,leads:0});
-    d.spend+=r.spend||0; if(!HAS_OBJ()||LEAD_OBJ.has(r.objetivo)) d.leads+=HAS_OBJ()?(LEAD_OBJ.has(r.objetivo)?r.conversions:0):0;});
-  const dates=Object.keys(byDate).sort();
-  const leads=dates.map(d=>byDate[d].leads);
-  const cpl=dates.map(d=>byDate[d].leads?byDate[d].spend/byDate[d].leads:0);
-  leadChart&&leadChart.destroy();
-  leadChart=new Chart(document.getElementById('leadChart'),{
-    data:{labels:dates.map(d=>d.slice(8)),datasets:[
-      {type:'bar',label:'Leads',data:leads,yAxisID:'y',backgroundColor:'#002c5f40',borderColor:'#002c5f',borderWidth:1,borderRadius:3,order:2},
-      {type:'line',label:'CPL',data:cpl,yAxisID:'y1',borderColor:'#ea4335',backgroundColor:'#ea4335',tension:.35,pointRadius:0,borderWidth:2.5,order:1}
-    ]},
-    options:{responsive:true,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#7b8499',usePointStyle:true,boxWidth:8,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` CPL: ${money(c.parsed.y)}`:` Leads: ${fmt(c.parsed.y)}`}}},
-      scales:{x:{ticks:{color:'#7b8499',maxTicksLimit:10},grid:{display:false}},
-        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499'},grid:{color:'#eef1f7'},title:{display:true,text:'Leads',color:'#7b8499',font:{size:10}}},
-        y1:{position:'right',beginAtZero:true,ticks:{color:'#ea4335',callback:moneyTick},grid:{display:false},title:{display:true,text:'CPL',color:'#ea4335',font:{size:10}}}}}});
-}
-
-function renderPlatTable(mtdRows){
-  const m={};
-  mtdRows.forEach(r=>{const p=m[r.plataforma]||(m[r.plataforma]={spend:0,leads:0});
-    p.spend+=r.spend||0; if(HAS_OBJ()&&LEAD_OBJ.has(r.objetivo)) p.leads+=r.conversions||0;});
-  const rows=Object.entries(m).sort((a,b)=>b[1].spend-a[1].spend);
-  document.querySelector('#platTbl tbody').innerHTML=rows.map(([pl,v])=>`
-    <tr><td><span class="plat-dot" style="background:${PLAT_HEX[pl]||'#999'}"></span>${pl}</td>
-      <td><b>${money0(v.spend)}</b></td>
-      <td>${HAS_OBJ()?fmt(v.leads):'—'}</td>
-      <td>${HAS_OBJ()&&v.leads?money(v.spend/v.leads):'—'}</td></tr>`).join('');
-}
-
-function renderMarca(){
-  const box=document.getElementById('marca');
-  const serie=(MARCA.serie||[]).slice().sort((a,b)=>a.mes.localeCompare(b.mes));
-  document.getElementById('marcaTitle').textContent=MARCA.unidad||'Share of Search';
-  if(!serie.length){
-    box.innerHTML='<div class="empty">Pendiente de actualización mensual.<br>'+
-      'El equipo de marca (Juanma) entrega el Share of Search una vez al mes. '+
-      'Cárgalo en <code>data/marca.json</code> (un objeto <code>{"mes":"2026-05","valor":42.5}</code> por mes) y aquí se mostrará el valor y su evolución.</div>';
-    return;
-  }
-  const last=serie[serie.length-1], prev=serie[serie.length-2];
-  const d = prev ? deltaHTML(last.valor,prev.valor,true) : '';
-  const max=Math.max(...serie.map(s=>s.valor))||1;
-  const bars=serie.map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
-      <div style="width:100%;height:90px;display:flex;align-items:flex-end"><div style="width:70%;margin:0 auto;height:${s.valor/max*100}%;background:var(--accent);border-radius:5px 5px 0 0"></div></div>
-      <div style="font-size:11px;font-weight:600">${fmt2(s.valor)}</div>
-      <div style="font-size:10px;color:var(--muted)">${MES_NOMBRES[s.mes.slice(5,7)]?.slice(0,3)||s.mes}</div>
-    </div>`).join('');
-  box.innerHTML=`<div class="marca-hero"><span class="m-val">${fmt2(last.valor)}</span><span class="m-unit">${esc(MARCA.unidad||'')}</span>${d}</div>
-    <div style="font-size:11.5px;color:var(--muted);margin-bottom:14px">Último dato: ${mesLargo(last.mes)} · fuente: ${esc(MARCA.fuente||'equipo de marca')}</div>
-    <div style="display:flex;gap:8px;align-items:flex-end">${bars}</div>`;
 }
 
 boot();
