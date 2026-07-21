@@ -95,31 +95,75 @@ async function withRetry(fn, tries = 5) {
 const GA4_PID = process.env.GA4_PROPERTY_ID || '';
 async function fetchGA4() {
   if (!GA4_PID) { console.log('GA4: sin GA4_PROPERTY_ID, se omite tráfico del sitio.'); return null; }
+  let client;
   try {
     const { BetaAnalyticsDataClient } = require('@google-analytics/data');
-    const client = new BetaAnalyticsDataClient();
-    const [resp] = await client.runReport({
-      property: `properties/${GA4_PID}`,
-      dateRanges: [{ startDate: SINCE, endDate: 'today' }],
-      dimensions: [{ name: 'date' }],
-      metrics: [{ name: 'sessions' }, { name: 'totalUsers' }],
-      orderBys: [{ dimension: { dimensionName: 'date' } }],
-      limit: 100000,
-    });
-    const rows = (resp.rows || []).map(r => {
-      const d = r.dimensionValues[0].value; // YYYYMMDD
-      return {
-        date: `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`,
-        sessions: num(r.metricValues[0].value),
-        users: num(r.metricValues[1].value),
-      };
-    }).filter(r => r.date >= SINCE);
-    console.log(`GA4 OK · propiedad ${GA4_PID} · ${rows.length} días de tráfico`);
-    return { property: GA4_PID, updated: new Date().toISOString(), rows };
+    client = new BetaAnalyticsDataClient();
   } catch (e) {
-    console.error('GA4: no se pudo traer el tráfico (se continúa sin él):', e.message);
+    console.error('GA4: no se pudo inicializar el cliente (se continúa sin él):', e.message);
     return null;
   }
+  const prop = `properties/${GA4_PID}`;
+  const FULL = [{ startDate: SINCE, endDate: 'today' }];
+  const L30  = [{ startDate: '30daysAgo', endDate: 'today' }];
+
+  // Cada reporte va aislado: si uno falla (métrica/dimensión no disponible en la
+  // propiedad), devuelve [] y los demás siguen funcionando.
+  async function rep(dims, mets, { ranges = L30, limit = 100000, sortBy = null, byDate = false } = {}) {
+    try {
+      const req = {
+        property: prop, dateRanges: ranges,
+        dimensions: dims.map(name => ({ name })),
+        metrics: mets.map(name => ({ name })),
+        limit,
+      };
+      if (byDate) req.orderBys = [{ dimension: { dimensionName: 'date' } }];
+      else if (sortBy) req.orderBys = [{ metric: { metricName: sortBy }, desc: true }];
+      const [r] = await client.runReport(req);
+      return (r.rows || []).map(row => {
+        const o = {};
+        if (byDate) {
+          const d = row.dimensionValues[0].value;           // YYYYMMDD
+          o.date = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+        } else {
+          o.k = row.dimensionValues.map(d => d.value).join(' / ') || '(no definido)';
+        }
+        mets.forEach((m, i) => { o[m] = num(row.metricValues[i].value); });
+        return o;
+      });
+    } catch (e) {
+      console.error(`GA4 [${dims.join('+')}]: ${e.message}`);
+      return [];
+    }
+  }
+
+  // Métricas aditivas (las tasas y promedios se calculan en el front)
+  const CORE = ['sessions','totalUsers','newUsers','screenPageViews','engagedSessions','userEngagementDuration'];
+
+  const [rows, canales, fuentes, dispositivos, ciudades, landing, paginas] = await Promise.all([
+    rep(['date'], CORE, { ranges: FULL, byDate: true }),
+    rep(['sessionDefaultChannelGroup'], ['sessions','totalUsers','engagedSessions','screenPageViews'], { sortBy:'sessions', limit:25 }),
+    rep(['sessionSourceMedium'], ['sessions','engagedSessions'], { sortBy:'sessions', limit:15 }),
+    rep(['deviceCategory'], ['sessions','totalUsers'], { sortBy:'sessions', limit:10 }),
+    rep(['city'], ['sessions'], { sortBy:'sessions', limit:12 }),
+    rep(['landingPage'], ['sessions','engagedSessions'], { sortBy:'sessions', limit:15 }),
+    rep(['pagePath'], ['screenPageViews','sessions'], { sortBy:'screenPageViews', limit:15 }),
+  ]);
+
+  const daily = rows.filter(r => r.date >= SINCE);
+  if (!daily.length) { console.error('GA4: no se obtuvieron días de tráfico.'); return null; }
+  console.log(`GA4 OK · propiedad ${GA4_PID} · ${daily.length} días · canales ${canales.length} · fuentes ${fuentes.length} · ` +
+    `dispositivos ${dispositivos.length} · ciudades ${ciudades.length} · landings ${landing.length} · páginas ${paginas.length}`);
+  return {
+    property: GA4_PID, updated: new Date().toISOString(),
+    ventana_desgloses: 'últimos 30 días',
+    rows: daily.map(r => ({
+      date: r.date,
+      sessions: r.sessions, users: r.totalUsers, newUsers: r.newUsers,
+      pageviews: r.screenPageViews, engaged: r.engagedSessions, engTime: r.userEngagementDuration,
+    })),
+    canales, fuentes, dispositivos, ciudades, landing, paginas,
+  };
 }
 
 (async () => {
