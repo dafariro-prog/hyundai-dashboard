@@ -115,6 +115,9 @@
   <div class="sec-title">⭐ KPIs del mes <small id="mesLbl"></small></div>
   <div class="kpis" id="kpis"></div>
 
+  <div class="sec-title" id="ga4Title">🌐 Comportamiento del sitio <small>· Google Analytics</small></div>
+  <div class="kpis" id="ga4kpis"></div>
+
   <!-- Grilla 2 columnas, según el mockup -->
   <div class="sec-title">📈 Evolución</div>
   <div class="grid2">
@@ -142,6 +145,8 @@ const fmt2=n=>new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractio
 const money=n=>'$'+fmt2(n);
 const money0=n=>'$'+fmt(n);
 const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+const pct1=n=>(n*100).toFixed(1)+'%';
+function dur(s){s=Math.round(s||0);return s>=60?Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s':s+'s';}
 function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
 function mesLargo(m){return (MES_NOMBRES[m.slice(5,7)]||m)+' '+m.slice(0,4);}
 // Formato de eje monetario adaptado al rango visible (evita "$1,$1,$0…")
@@ -226,11 +231,14 @@ function render(){
 
   if(!rows.length){
     document.getElementById('kpis').innerHTML='<div class="empty" style="grid-column:1/-1">No hay datos para el periodo seleccionado.</div>';
+    document.getElementById('ga4Title').style.display='none';
+    document.getElementById('ga4kpis').innerHTML='';
     Object.values(CH).forEach(c=>c&&c.destroy()); CH={};
     return;
   }
 
   renderKpis(rows,det,ga4,maxD);
+  renderGa4Kpis(ga4,maxD);
   // Series semanales
   const wInv  =byWeek(rows,r=>r.spend);
   const wImp  =byWeek(rows,r=>r.impressions);
@@ -282,6 +290,34 @@ function renderKpis(rows,det,ga4,maxD){
       : {ico:'🌐',label:'Tráfico (clics)', val:fmt(S(rows,'clicks')), d:deltaHTML(S(cur,'clicks'),S(prv,'clicks')), n:'proxy — sin datos GA4 en el periodo'},
   ];
   document.getElementById('kpis').innerHTML=cards.map(c=>`
+    <div class="kpi">
+      <div class="k-label"><span>${c.ico}</span>${c.label}</div>
+      <div class="k-val">${c.val}</div>
+      <div class="k-foot">${c.d||''}<span>${c.n}</span></div>
+    </div>`).join('');
+}
+
+// KPIs de Google Analytics (mismo bloque que la página de Analytics)
+function renderGa4Kpis(ga4,maxD){
+  const box=document.getElementById('ga4kpis'), title=document.getElementById('ga4Title');
+  if(!ga4.length){ title.style.display='none'; box.innerHTML=''; return; }
+  title.style.display='flex';
+  const cur=ga4.filter(r=>r.date>=addDays(maxD,-6)&&r.date<=maxD);
+  const prv=ga4.filter(r=>r.date>=addDays(maxD,-13)&&r.date<=addDays(maxD,-7));
+  const eng=a=>S(a,'sessions')?S(a,'engaged')/S(a,'sessions'):0;
+  const dsn=a=>S(a,'sessions')?S(a,'engTime')/S(a,'sessions'):0;
+  const pps=a=>S(a,'sessions')?S(a,'pageviews')/S(a,'sessions'):0;
+  const cards=[
+    {ico:'👥',label:'Sesiones',           val:fmt(S(ga4,'sessions')),  d:deltaHTML(S(cur,'sessions'),S(prv,'sessions')), n:'vs semana anterior'},
+    {ico:'🧑',label:'Usuarios',           val:fmt(S(ga4,'users')),     d:deltaHTML(S(cur,'users'),S(prv,'users')),       n:'vs semana anterior'},
+    {ico:'✨',label:'Usuarios nuevos',    val:fmt(S(ga4,'newUsers')),  d:deltaHTML(S(cur,'newUsers'),S(prv,'newUsers')),
+      n:S(ga4,'users')?pct1(S(ga4,'newUsers')/S(ga4,'users'))+' del total':'vs semana anterior'},
+    {ico:'📄',label:'Páginas vistas',     val:fmt(S(ga4,'pageviews')), d:deltaHTML(S(cur,'pageviews'),S(prv,'pageviews')),
+      n:pps(ga4).toFixed(1)+' por sesión'},
+    {ico:'🎯',label:'Tasa de interacción',val:pct1(eng(ga4)),          d:deltaHTML(eng(cur),eng(prv)), n:'sesiones con interacción'},
+    {ico:'⏱️',label:'Duración media',     val:dur(dsn(ga4)),           d:deltaHTML(dsn(cur),dsn(prv)), n:'por sesión'},
+  ];
+  box.innerHTML=cards.map(c=>`
     <div class="kpi">
       <div class="k-label"><span>${c.ico}</span>${c.label}</div>
       <div class="k-val">${c.val}</div>
