@@ -102,6 +102,7 @@
 
   <div class="nav">
     <a href="overview.html" class="on">📊 Resumen ejecutivo</a>
+    <a href="analytics.html">🌐 Analytics del sitio</a>
     <a href="index.html">📋 Detalle de campañas</a>
   </div>
 
@@ -161,6 +162,14 @@ const fmt=n=>new Intl.NumberFormat('es').format(Math.round(n||0));
 const fmt2=n=>new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
 const money=n=>'$'+fmt2(n);
 const money0=n=>'$'+fmt(n);
+// Formato de eje monetario adaptado al rango visible: evita repetir "$1,$1,$0…"
+// cuando se apaga una serie en la leyenda y el eje colapsa a 0-1.
+function moneyTick(v,i,ticks){
+  const max=Math.max(...(ticks||[]).map(t=>Math.abs(t.value)),Math.abs(v));
+  if(max>=1000) return '$'+fmt(v);
+  if(max>=10)   return '$'+Math.round(v);
+  return '$'+(+v).toFixed(2);
+}
 const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
 function addDays(dstr,n){const d=new Date(dstr+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 function mesLargo(m){return (MES_NOMBRES[m.slice(5,7)]||m)+' '+m.slice(0,4);}
@@ -364,7 +373,7 @@ function renderMonthly(mesA,maxDate){
       plugins:{legend:{labels:{color:'#7b8499',usePointStyle:true,boxWidth:8,font:{size:11}}},
         tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` Leads: ${fmt(c.parsed.y)}`:` Inversión: ${money0(c.parsed.y)}`}}},
       scales:{x:{ticks:{color:'#7b8499'},grid:{display:false}},
-        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499',callback:v=>'$'+fmt(v)},grid:{color:'#eef1f7'}},
+        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499',callback:moneyTick},grid:{color:'#eef1f7'}},
         y1:{position:'right',beginAtZero:true,ticks:{color:'#ea4335'},grid:{display:false}}}}});
 }
 
@@ -386,7 +395,7 @@ function renderLeadChart(mtdRows,mesA){
         tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` CPL: ${money(c.parsed.y)}`:` Leads: ${fmt(c.parsed.y)}`}}},
       scales:{x:{ticks:{color:'#7b8499',maxTicksLimit:10},grid:{display:false}},
         y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499'},grid:{color:'#eef1f7'},title:{display:true,text:'Leads',color:'#7b8499',font:{size:10}}},
-        y1:{position:'right',beginAtZero:true,ticks:{color:'#ea4335',callback:v=>'$'+(+v).toFixed(0)},grid:{display:false},title:{display:true,text:'CPL',color:'#ea4335',font:{size:10}}}}}});
+        y1:{position:'right',beginAtZero:true,ticks:{color:'#ea4335',callback:moneyTick},grid:{display:false},title:{display:true,text:'CPL',color:'#ea4335',font:{size:10}}}}}});
 }
 
 function renderPlatTable(mtdRows){

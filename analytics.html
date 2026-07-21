@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics del sitio · Hyundai</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f5; --card:#ffffff; --line:#e4e4e4; --txt:#151515; --muted:#6e6e6e;
+    --accent:#002c5f; --up:#15803d; --down:#b91c1c;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:24px}
+
+  .topbar{background:#fff;border-radius:20px;padding:13px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;box-shadow:var(--shadow)}
+  .tb-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .tb-hyundai{font-size:22px;font-weight:600;letter-spacing:4px;color:#002c5f}
+  .tb-sep{width:1px;height:22px;background:var(--line)}
+  .tb-title{font-size:15px;font-weight:600;color:var(--txt)}
+  .tb-by{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:500}
+  .tb-bylogo{height:15px;display:block;opacity:.85}
+  .tb-right{display:flex;align-items:center;gap:9px;font-size:12.5px;flex-wrap:wrap}
+  .pill-user{background:#f3f3f3;border-radius:22px;padding:8px 15px;font-weight:500;color:#3D3D3D}
+  .pill-dark{background:var(--accent);color:#fff;border-radius:22px;padding:8px 15px;font-weight:600;text-decoration:none}
+  .pill-out{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 15px;font-weight:600;color:var(--txt);cursor:pointer}
+
+  .nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .nav a{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;box-shadow:var(--shadow)}
+  .nav a.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .meta-line{font-size:11.5px;color:var(--muted);margin:0 6px 16px}
+  .sec-title{font-size:15px;font-weight:600;margin:22px 4px 14px;display:flex;align-items:center;gap:8px}
+  .sec-title small{font-weight:500;color:var(--muted);font-size:12px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
+  .kpi .k-label{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .kpi .k-val{font-size:30px;font-weight:600;letter-spacing:-1px;line-height:1}
+  .kpi .k-foot{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+  .delta{font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;font-size:11px}
+  .delta.up{background:#dcfce7;color:var(--up)}
+  .delta.down{background:#fee2e2;color:var(--down)}
+  .delta.flat{background:#f1f3f7;color:#7b8499}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);min-width:0}
+  .card.wide{grid-column:1/-1}
+  .card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card h3 small{font-weight:500;color:var(--muted);font-size:11.5px}
+  canvas{max-height:280px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  td b{font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}
+  .path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}
+
+  .bar-row{margin-bottom:11px}
+  .bar-row:last-child{margin-bottom:0}
+  .bar-top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;gap:10px}
+  .bar-top .b-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-top .b-val{color:var(--muted);white-space:nowrap}
+  .bar{height:7px;border-radius:5px;background:#eef1f7;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:5px;background:var(--accent)}
+
+  .empty{color:var(--muted);font-size:13px;padding:12px 2px;line-height:1.6}
+  .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  #gate{padding:60px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="gate">Cargando…</div>
+<div class="wrap" id="app" style="display:none">
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-hyundai">HYUNDAI</span>
+      <span class="tb-sep"></span>
+      <span class="tb-title">Analytics del sitio</span>
+      <span class="tb-by">by <img class="tb-bylogo" src="assets/garnier_brand_black.png" alt="Grupo Garnier"></span>
+    </div>
+    <div class="tb-right" id="userBox"></div>
+  </div>
+
+  <div class="nav">
+    <a href="overview.html">📊 Resumen ejecutivo</a>
+    <a href="analytics.html" class="on">🌐 Analytics del sitio</a>
+    <a href="index.html">📋 Detalle de campañas</a>
+  </div>
+
+  <div class="meta-line" id="meta">—</div>
+
+  <div class="sec-title">🌐 Comportamiento del sitio <small id="mesLbl"></small></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="sec-title">📈 Evolución diaria</div>
+  <div class="cards">
+    <div class="card wide"><h3>Sesiones y tasa de interacción por día <small>· mes en curso</small></h3><canvas id="dayChart"></canvas></div>
+  </div>
+
+  <div class="sec-title">🚦 De dónde llega el tráfico <small id="w30a"></small></div>
+  <div class="cards">
+    <div class="card"><h3>Canales</h3><canvas id="chanChart" style="max-height:230px"></canvas>
+      <div style="overflow-x:auto;margin-top:14px"><table id="chanTbl">
+        <thead><tr><th>Canal</th><th>Sesiones</th><th>%</th><th>Interacción</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card"><h3>Fuente / medio <small>· top 10</small></h3>
+      <div style="overflow-x:auto"><table id="srcTbl">
+        <thead><tr><th>Fuente / medio</th><th>Sesiones</th><th>Interacción</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="sec-title">📱 Quién y desde dónde <small id="w30b"></small></div>
+  <div class="cards">
+    <div class="card"><h3>Dispositivos</h3><canvas id="devChart" style="max-height:230px"></canvas>
+      <div id="devList" style="margin-top:14px"></div>
+    </div>
+    <div class="card"><h3>Ciudades <small>· top 10</small></h3><div id="cityList"></div></div>
+  </div>
+
+  <div class="sec-title">📄 Contenido más visto <small id="w30c"></small></div>
+  <div class="cards">
+    <div class="card"><h3>Páginas de entrada <small>· landing pages</small></h3>
+      <div style="overflow-x:auto"><table id="landTbl">
+        <thead><tr><th>Página</th><th>Sesiones</th><th>Interacción</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card"><h3>Páginas más vistas</h3>
+      <div style="overflow-x:auto"><table id="pageTbl">
+        <thead><tr><th>Página</th><th>Vistas</th><th>Sesiones</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const ACC='#002c5f';
+const PAL=['#002c5f','#1877f2','#1DCB78','#F6993E','#EB3B38','#BD8AF2','#00a3a3','#8a6312','#7b8499','#c026d3','#0891b2','#65a30d'];
+const DEV_ICO={mobile:'📱',desktop:'💻',tablet:'📲','smart tv':'📺'};
+const DEV_NOM={mobile:'Móvil',desktop:'Escritorio',tablet:'Tablet','smart tv':'Smart TV'};
+const MES_NOMBRES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+
+const fmt=n=>new Intl.NumberFormat('es').format(Math.round(n||0));
+const pct1=n=>(n*100).toFixed(1)+'%';
+const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+function dur(s){s=Math.round(s||0);return s>=60?Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s':s+'s';}
+function mesLargo(m){return (MES_NOMBRES[m.slice(5,7)]||m)+' '+m.slice(0,4);}
+const S=(a,k)=>a.reduce((x,r)=>x+(r[k]||0),0);
+
+let G=null, dayChart, chanChart, devChart;
+
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ location.replace('login.html'); return; }
+  const email=session.user.email.toLowerCase();
+  const {data:perm}=await sb.from('permisos').select('*').eq('email',email).maybeSingle();
+  if(!perm){
+    document.getElementById('gate').innerHTML='<div style="max-width:520px;margin:0 auto"><h2>Sin acceso</h2>'+
+      '<p style="margin-top:10px">Tu correo <b>'+esc(email)+'</b> no está autorizado.</p></div>';
+    return;
+  }
+  document.getElementById('userBox').innerHTML=
+    `<span class="pill-user">👤 ${esc(email)}</span>`+
+    (perm.rol==='admin'?`<a class="pill-dark" href="admin.html">⚙️ Admin</a>`:'')+
+    `<button class="pill-out" onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
+  const d=await (await fetch('data/tracking.json')).json();
+  G=d.ga4;
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+  if(!G||!G.rows||!G.rows.length){
+    document.getElementById('meta').textContent='';
+    document.getElementById('kpis').innerHTML='<div class="empty" style="grid-column:1/-1">Aún no hay datos de Google Analytics. Se cargan en el próximo refresco automático.</div>';
+    return;
+  }
+  render();
+}
+
+function render(){
+  const rows=G.rows.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const maxD=rows[rows.length-1].date, minD=rows[0].date, mesA=maxD.slice(0,7);
+  const w30=' · '+(G.ventana_desgloses||'últimos 30 días');
+  ['w30a','w30b','w30c'].forEach(id=>document.getElementById(id).textContent=w30);
+  document.getElementById('mesLbl').textContent='· '+mesLargo(mesA)+' (al '+maxD.split('-').reverse().join('/')+')';
+  document.getElementById('meta').textContent=
+    `Propiedad GA4 ${G.property} · hyundai.petroautos.com · datos ${minD.split('-').reverse().join('/')} → ${maxD.split('-').reverse().join('/')}`+
+    (G.updated?` · actualizado ${new Date(G.updated).toLocaleString('es')}`:'');
+
+  const mtd=rows.filter(r=>r.date.slice(0,7)===mesA);
+  const cur=rows.filter(r=>r.date>=addDays(maxD,-6)&&r.date<=maxD);
+  const prv=rows.filter(r=>r.date>=addDays(maxD,-13)&&r.date<=addDays(maxD,-7));
+  renderKpis(mtd,cur,prv);
+  renderDayChart(mtd);
+  renderCanales();
+  renderTabla('srcTbl',(G.fuentes||[]).slice(0,10),r=>[esc(r.k),fmt(r.sessions),r.sessions?pct1(r.engagedSessions/r.sessions):'—']);
+  renderDispositivos();
+  renderCiudades();
+  renderTabla('landTbl',(G.landing||[]).slice(0,10),r=>[`<span class="path" title="${esc(r.k)}">${esc(r.k)}</span>`,fmt(r.sessions),r.sessions?pct1(r.engagedSessions/r.sessions):'—']);
+  renderTabla('pageTbl',(G.paginas||[]).slice(0,10),r=>[`<span class="path" title="${esc(r.k)}">${esc(r.k)}</span>`,fmt(r.screenPageViews),fmt(r.sessions)]);
+  document.getElementById('foot').textContent='Fuente: Google Analytics 4 (Data API) · propiedad '+G.property+' · los desgloses corresponden a los '+(G.ventana_desgloses||'últimos 30 días');
+}
+
+function deltaHTML(c,p,betterUp=true){
+  if(!p) return '<span class="delta flat">—</span>';
+  const ch=(c-p)/p, good=betterUp?ch>=0:ch<=0;
+  const cls=Math.abs(ch)<0.005?'flat':(good?'up':'down');
+  const ar=ch>0.005?'▲':(ch<-0.005?'▼':'▬');
+  return `<span class="delta ${cls}">${ar} ${Math.abs(ch*100).toFixed(1)}%</span>`;
+}
+
+function renderKpis(mtd,cur,prv){
+  const eng=a=>S(a,'sessions')?S(a,'engaged')/S(a,'sessions'):0;
+  const dsn=a=>S(a,'sessions')?S(a,'engTime')/S(a,'sessions'):0;
+  const pps=a=>S(a,'sessions')?S(a,'pageviews')/S(a,'sessions'):0;
+  const cards=[
+    {ico:'👥',label:'Sesiones',        val:fmt(S(mtd,'sessions')),  d:deltaHTML(S(cur,'sessions'),S(prv,'sessions'))},
+    {ico:'🧑',label:'Usuarios',        val:fmt(S(mtd,'users')),     d:deltaHTML(S(cur,'users'),S(prv,'users'))},
+    {ico:'✨',label:'Usuarios nuevos', val:fmt(S(mtd,'newUsers')),  d:deltaHTML(S(cur,'newUsers'),S(prv,'newUsers')),
+      note2:S(mtd,'users')?pct1(S(mtd,'newUsers')/S(mtd,'users'))+' del total':''},
+    {ico:'📄',label:'Páginas vistas',  val:fmt(S(mtd,'pageviews')), d:deltaHTML(S(cur,'pageviews'),S(prv,'pageviews')),
+      note2:pps(mtd).toFixed(1)+' por sesión'},
+    {ico:'🎯',label:'Tasa de interacción', val:pct1(eng(mtd)),      d:deltaHTML(eng(cur),eng(prv)), note2:'sesiones con interacción'},
+    {ico:'⏱️',label:'Duración media',  val:dur(dsn(mtd)),           d:deltaHTML(dsn(cur),dsn(prv)), note2:'por sesión'},
+  ];
+  document.getElementById('kpis').innerHTML=cards.map(c=>`
+    <div class="kpi">
+      <div class="k-label"><span>${c.ico}</span>${c.label}</div>
+      <div class="k-val">${c.val}</div>
+      <div class="k-foot">${c.d}<span>${c.note2||'vs semana anterior'}</span></div>
+    </div>`).join('');
+}
+
+function renderDayChart(mtd){
+  const labels=mtd.map(r=>r.date.slice(8));
+  const ses=mtd.map(r=>r.sessions);
+  const er=mtd.map(r=>r.sessions?r.engaged/r.sessions*100:0);
+  dayChart&&dayChart.destroy();
+  dayChart=new Chart(document.getElementById('dayChart'),{
+    data:{labels,datasets:[
+      {type:'bar',label:'Sesiones',data:ses,yAxisID:'y',backgroundColor:ACC+'40',borderColor:ACC,borderWidth:1,borderRadius:3,order:2},
+      {type:'line',label:'Tasa de interacción',data:er,yAxisID:'y1',borderColor:'#EB3B38',backgroundColor:'#EB3B38',tension:.35,pointRadius:0,borderWidth:2.5,order:1}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#7b8499',usePointStyle:true,boxWidth:8,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` Interacción: ${c.parsed.y.toFixed(1)}%`:` Sesiones: ${fmt(c.parsed.y)}`}}},
+      scales:{x:{ticks:{color:'#7b8499',maxTicksLimit:12},grid:{display:false}},
+        y:{position:'left',beginAtZero:true,ticks:{color:'#7b8499',callback:v=>fmt(v)},grid:{color:'#eef1f7'},title:{display:true,text:'Sesiones',color:'#7b8499',font:{size:10}}},
+        y1:{position:'right',beginAtZero:true,max:100,ticks:{color:'#EB3B38',callback:v=>v+'%'},grid:{display:false},title:{display:true,text:'Interacción',color:'#EB3B38',font:{size:10}}}}}});
+}
+
+function renderCanales(){
+  const c=(G.canales||[]).slice(0,10);
+  if(!c.length){document.getElementById('chanTbl').parentNode.innerHTML='<div class="empty">Sin datos de canales.</div>';return;}
+  const tot=S(c,'sessions')||1;
+  chanChart&&chanChart.destroy();
+  chanChart=new Chart(document.getElementById('chanChart'),{type:'doughnut',
+    data:{labels:c.map(r=>r.k),datasets:[{data:c.map(r=>r.sessions),backgroundColor:c.map((_,i)=>PAL[i%PAL.length]),borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#7b8499',padding:10,font:{size:10.5},usePointStyle:true,boxWidth:7}},
+      tooltip:{callbacks:{label:x=>` ${x.label}: ${fmt(x.parsed)} (${pct1(x.parsed/tot)})`}}}}});
+  document.querySelector('#chanTbl tbody').innerHTML=c.map((r,i)=>`
+    <tr><td><span class="dot" style="background:${PAL[i%PAL.length]}"></span>${esc(r.k)}</td>
+      <td><b>${fmt(r.sessions)}</b></td><td>${pct1(r.sessions/tot)}</td>
+      <td>${r.sessions?pct1(r.engagedSessions/r.sessions):'—'}</td></tr>`).join('');
+}
+
+function renderDispositivos(){
+  const d=(G.dispositivos||[]);
+  if(!d.length){document.getElementById('devList').innerHTML='<div class="empty">Sin datos.</div>';return;}
+  const tot=S(d,'sessions')||1;
+  devChart&&devChart.destroy();
+  devChart=new Chart(document.getElementById('devChart'),{type:'doughnut',
+    data:{labels:d.map(r=>DEV_NOM[r.k]||r.k),datasets:[{data:d.map(r=>r.sessions),backgroundColor:d.map((_,i)=>PAL[i%PAL.length]),borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#7b8499',padding:10,font:{size:11},usePointStyle:true,boxWidth:7}},
+      tooltip:{callbacks:{label:x=>` ${x.label}: ${fmt(x.parsed)} (${pct1(x.parsed/tot)})`}}}}});
+  document.getElementById('devList').innerHTML=d.map((r,i)=>`
+    <div class="bar-row">
+      <div class="bar-top"><span class="b-name">${DEV_ICO[r.k]||'•'} ${DEV_NOM[r.k]||esc(r.k)}</span>
+        <span class="b-val">${fmt(r.sessions)} · ${pct1(r.sessions/tot)}</span></div>
+      <div class="bar"><i style="width:${r.sessions/tot*100}%;background:${PAL[i%PAL.length]}"></i></div>
+    </div>`).join('');
+}
+
+function renderCiudades(){
+  const c=(G.ciudades||[]).slice(0,10);
+  const box=document.getElementById('cityList');
+  if(!c.length){box.innerHTML='<div class="empty">Sin datos.</div>';return;}
+  const max=Math.max(...c.map(r=>r.sessions))||1, tot=S(G.ciudades||[],'sessions')||1;
+  box.innerHTML=c.map(r=>`
+    <div class="bar-row">
+      <div class="bar-top"><span class="b-name">${esc(r.k)}</span>
+        <span class="b-val">${fmt(r.sessions)} · ${pct1(r.sessions/tot)}</span></div>
+      <div class="bar"><i style="width:${r.sessions/max*100}%"></i></div>
+    </div>`).join('');
+}
+
+function renderTabla(id,rows,cols){
+  const tb=document.querySelector('#'+id+' tbody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="3" style="text-align:left;color:var(--muted)">Sin datos.</td></tr>';return;}
+  tb.innerHTML=rows.map(r=>'<tr>'+cols(r).map((v,i)=>`<td>${i===1?'<b>'+v+'</b>':v}</td>`).join('')+'</tr>').join('');
+}
+
+boot();
+</script>
+</body>
+</html>
