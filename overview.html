@@ -201,7 +201,10 @@ function applyScope(d,perm){
 function buildFilters(){
   const meses=[...new Set(DATA.rows.map(r=>r.date.slice(0,7)))].sort();
   const anios=[...new Set(meses.map(m=>m.slice(0,4)))].sort();
-  const ult=meses[meses.length-1]||'';
+  // Mes por defecto: el más reciente CON inversión de pauta. Evita abrir en un mes
+  // recién empezado cuyo gasto la fuente (BigQuery) aún no ha cargado y se ve "en cero".
+  const conDatos=[...new Set(DATA.rows.filter(r=>(r.spend||0)>0).map(r=>r.date.slice(0,7)))].sort();
+  const ult=conDatos[conDatos.length-1]||meses[meses.length-1]||'';
   document.getElementById('fAnio').innerHTML='<option value="">Todos</option>'+anios.map(y=>`<option>${y}</option>`).join('');
   const mm=[...new Set(meses.map(m=>m.slice(5,7)))].sort();
   document.getElementById('fMes').innerHTML='<option value="">Todos</option>'+mm.map(m=>`<option value="${m}">${MES_NOMBRES[m]}</option>`).join('');
